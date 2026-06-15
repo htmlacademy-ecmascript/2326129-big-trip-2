@@ -5,6 +5,7 @@ import EditPointView from '../view/edit-point-view/edit-point-view';
 import PointView from '../view/point-view/point-view';
 import AddNewPointView from '../view/add-new-point/add-new-point-view';
 
+const POINTS_AMOUNT = 3;
 
 export default class BoardPresenter {
   sortComponent = new SortingView();
@@ -20,7 +21,7 @@ export default class BoardPresenter {
     render(new AddNewPointView(), this.pointListComponent.getElement());
     render(new EditPointView(), this.pointListComponent.getElement());
 
-    for(let i = 0; i < 3; i++) {
+    for(let i = 0; i < POINTS_AMOUNT; i++) {
       render(new PointView(), this.pointListComponent.getElement());
     }
 
