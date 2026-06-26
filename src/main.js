@@ -8,6 +8,7 @@ const siteFilters = siteHeaderElement.querySelector('.trip-controls__filters');
 const siteTripEvents = document.querySelector('.trip-events');
 
 const pointsModel = new Points();
+pointsModel.init();
 const boardPresenter = new BoardPresenter({container: siteTripEvents, pointsModel});
 
 render(new FilterView(), siteFilters);

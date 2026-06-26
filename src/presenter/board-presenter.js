@@ -16,7 +16,7 @@ export default class BoardPresenter {
   }
 
   init() {
-    const points = [...this.pointsModel.getPoints()];
+    const points = [...this.pointsModel.getTravelPoints()];
     const offers = [...this.pointsModel.getOffers()];
     const destinations = [...this.pointsModel.getDestinations()];
 
@@ -27,7 +27,7 @@ export default class BoardPresenter {
     render(new EditPointView({point: points[0], destinations, offers}), this.pointListComponent.getElement());
 
     for(const point of points){
-      render(new PointView(point, destinations, offers), this.pointListComponent.getElement());
+      render(new PointView({point: point, destinations: destinations, offers: offers}), this.pointListComponent.getElement());
     }
   }
 }

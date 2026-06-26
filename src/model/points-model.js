@@ -12,12 +12,12 @@ export default class Points {
   }
 
   init(){
-    this.travelPoints = Array.from({length: POINTS_COUNT}, getRandomPoint);;
+    this.travelPoints = Array.from({length: POINTS_COUNT}, getRandomPoint);
     this.offers = offers;
     this.destinations = destinations;
   }
 
-  getPoints() {
+  getTravelPoints() {
     return this.travelPoints;
   }
 

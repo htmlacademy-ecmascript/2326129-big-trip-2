@@ -1,11 +1,11 @@
 export const POINT_TYPES = ['taxi', 'bus', 'train', 'ship', 'drive', 'flight', 'check-in', 'sightseeing', 'restaurant'];
 
 export const getDefaultPoint = () => ({
-  basePrice: 0,
-  dateFrom: new Date().toISOString(),
-  dateTo: new Date().toISOString(),
+  base_price: 0,
+  date_from: new Date().toISOString(),
+  date_to: new Date().toISOString(),
   destination: 0,
-  isFavorite: false,
+  is_favorite: false,
   offers: [],
   type: POINT_TYPES[0]
 });

@@ -5,12 +5,12 @@ const upFirstLetter = (word) => `${word[0].toUpperCase()}${word.slice(1)}`;
 const formatOfferTitle = (title) => title.split(' ').join('_');
 
 export function createEditPointTemplate(point, destinations, offers) {
+  const {type, date_from, date_to, base_price} = point;
   const pointDestination = destinations.find((dest) => dest.id === point.destination);
   const typeOffers = offers.find((item) => item.type === point.type).offers;
   const pointOffers = typeOffers.filter((typeOffer) => point.offers.includes(typeOffer.id));
-  const {type, dateFrom, dateTo, price} = point;
   const {name, description, pictures} = pointDestination || {};
-  const pointId = point.id || 0;
+  const pointId = point.id || null;
 
   return (`<li class="trip-events__item">
               <form class="event event--edit" action="#" method="post">
@@ -41,7 +41,7 @@ export function createEditPointTemplate(point, destinations, offers) {
                     <label class="event__label  event__type-output" for="event-destination-${pointId}">
                       ${type}
                     </label>
-                    <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value=${name || ''} list="destination-list-${pointId}">
+                    <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value=${name || '&nbsp;'} list="destination-list-${pointId}">
                     <datalist id="destination-list-${pointId}">
                     ${destinations.map((destination) => `<option value = "${destination.name}"></option>`).join('')}
                     </datalist>
@@ -49,10 +49,10 @@ export function createEditPointTemplate(point, destinations, offers) {
 
                   <div class="event__field-group  event__field-group--time">
                     <label class="visually-hidden" for="event-start-time-${pointId}">From</label>
-                    <input class="event__input  event__input--time" id="event-start-time-${pointId}" type="text" name="event-start-time" value="${formatDate(dateFrom, 'date-time')}">
+                    <input class="event__input  event__input--time" id="event-start-time-${pointId}" type="text" name="event-start-time" value="${formatDate(date_from, 'date-time')}">
                     &mdash;
                     <label class="visually-hidden" for="event-end-time-${pointId}">To</label>
-                    <input class="event__input  event__input--time" id="event-end-time-${pointId}" type="text" name="event-end-time" value="${formatDate(dateTo, 'date-time')}">
+                    <input class="event__input  event__input--time" id="event-end-time-${pointId}" type="text" name="event-end-time" value="${formatDate(date_to, 'date-time')}">
                   </div>
 
                   <div class="event__field-group  event__field-group--price">
@@ -60,7 +60,7 @@ export function createEditPointTemplate(point, destinations, offers) {
                       <span class="visually-hidden">Price</span>
                       &euro;
                     </label>
-                    <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value=${price}>
+                    <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value=${base_price}>
                   </div>
 
                   <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
@@ -94,7 +94,7 @@ export function createEditPointTemplate(point, destinations, offers) {
                   </section>`
       : ''}
 
-                  ${pointDestination ? (
+                  ${pointDestination && (pointDestination.description || pictures.length) ? (
       `<section class="event__section  event__section--destination">
                     <h3 class="event__section-title  event__section-title--destination">Destination</h3>
                     <p class="event__destination-description">${description}</p>

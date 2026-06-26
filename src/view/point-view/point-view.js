@@ -10,7 +10,7 @@ export default class PointView {
   }
 
   getTemplate() {
-    return createPointTemplate(this.point, this.destinations, this.offers);
+    return createPointTemplate(this.point, this.offers, this.destinations);
   }
 
   getElement() {
