@@ -204,3 +204,5 @@ const offers = [
     ]
   }
 ];
+
+export { offers };

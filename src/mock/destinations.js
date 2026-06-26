@@ -105,3 +105,5 @@ const destinations = [
     'pictures': []
   }
 ];
+
+export { destinations };

@@ -1,3 +1,5 @@
+import { getRandomElement } from '../utils';
+
 const points = [
   {
     'id': 'b6e30b4b-4b35-4fbd-aea9-7b9be137d55b',
@@ -310,3 +312,10 @@ const points = [
     'type': 'taxi'
   }
 ];
+
+
+function getRandomPoint () {
+  return getRandomElement(points);
+}
+
+export {getRandomPoint};
