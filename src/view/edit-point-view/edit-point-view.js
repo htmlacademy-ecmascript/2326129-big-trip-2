@@ -1,25 +1,26 @@
 import { createEditPointTemplate } from './edit-point-view-template.js';
-import { createElement } from '../../render.js';
+import AbstractView from '../../framework/view/abstract-view.js';
 
-export default class EditPointView {
-  constructor({ point, destinations, offers }) {
+export default class EditPointView extends AbstractView{
+  #handleFormSubmit = null;
+
+
+  constructor({ point, destinations, offers, onFormSubmit }) {
+    super();
     this.point = point;
     this.destinations = destinations;
     this.offers = offers;
+    this.#handleFormSubmit = onFormSubmit;
+
+    this.element.querySelector('form').addEventListener('submit', onFormSubmit);
   }
 
-  getTemplate() {
+  get template() {
     return createEditPointTemplate(this.point, this.destinations, this.offers);
   }
 
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
-  }
+  #submitFormHandler = (evt) => {
+    evt.preventDefault();
+    return this.#handleFormSubmit();
+  };
 }
