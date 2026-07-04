@@ -4,7 +4,6 @@ import { render } from '../render.js';
 import { replace } from '../framework/render.js';
 import EditPointView from '../view/edit-point-view/edit-point-view';
 import PointView from '../view/point-view/point-view';
-// import { getDefaultPoint } from '../const';
 
 export default class BoardPresenter {
   #sortComponent = new SortingView();
@@ -25,20 +24,12 @@ export default class BoardPresenter {
     render(this.#sortComponent, this.#container);
     render(this.#pointListComponent, this.#container);
 
-    // this.#renderView(EditPointView, {point: getDefaultPoint(), destinations, offers});
-    // this.#renderView(EditPointView, {point: points[0], destinations, offers});
-    render(new EditPointView({point: points[0], destinations, offers}), this.#pointListComponent.element);
-
-
-    for(let i = 1; i < points.length; i++){
-      this.#renderView({point: points[i], destinations: destinations, offers: offers});
-    }
+    points.forEach((point) => {
+      this.#renderPoint({point: point, destinations: destinations, offers: offers});
+    });
   }
 
-  #renderView({task}){
-    // const component = new Component(...args);
-    // const container = this.#pointListComponent.element;
-    // render(component, container);
+  #renderPoint({point, destinations, offers}){
     const escKeydownHandler = (evt) => {
       if(evt.key === 'Escape'){
         evt.preventDefault();
@@ -48,7 +39,9 @@ export default class BoardPresenter {
     };
 
     const pointComponent = new PointView({
-      task,
+      point,
+      destinations,
+      offers,
       onRollupClick: () => {
         replacePointToForm();
         document.addEventListener('keydown', escKeydownHandler);
@@ -56,8 +49,14 @@ export default class BoardPresenter {
     });
 
     const pointEditComponent = new EditPointView({
-      task,
+      point,
+      destinations,
+      offers,
       onFormSubmit: () => {
+        replaceFormToPoint();
+        document.removeEventListener('keydown', escKeydownHandler);
+      },
+      onRollupClick: () => {
         replaceFormToPoint();
         document.removeEventListener('keydown', escKeydownHandler);
       }

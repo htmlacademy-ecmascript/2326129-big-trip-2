@@ -1,4 +1,5 @@
-import { formatDate, getDuration } from '../../utils.js';
+/* eslint-disable camelcase */
+import { formatDate, getDuration } from '../../utils/common.js';
 
 function createOfferTemplate({title, price}){
   return `
@@ -12,7 +13,6 @@ function createOfferTemplate({title, price}){
 
 export function createPointTemplate (point, offers, destinations) {
   const {type, date_from, date_to, is_favorite, base_price} = point;
-  console.log(point.type);
   const typeOffers = offers.find((item) => item.type === point.type).offers;
   const pointOffers = typeOffers.filter((typeOffer) => point.offers.includes(typeOffer.id));
   const pointDestination = destinations.find((dest) => dest.id === point.destination);

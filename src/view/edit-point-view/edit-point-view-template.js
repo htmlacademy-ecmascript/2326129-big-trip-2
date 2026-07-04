@@ -1,4 +1,4 @@
-import { formatDate } from '../../utils.js';
+import { formatDate } from '../../utils/common.js';
 import { POINT_TYPES } from '../../const.js';
 
 const upFirstLetter = (word) => `${word[0].toUpperCase()}${word.slice(1)}`;
