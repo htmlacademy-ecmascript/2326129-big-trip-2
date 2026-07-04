@@ -1,4 +1,4 @@
-import { getRandomElement } from '../utils';
+import { getRandomElement } from '../utils/common';
 
 const points = [
   {

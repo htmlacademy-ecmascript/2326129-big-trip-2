@@ -1,4 +1,5 @@
-import { formatDate, getDuration } from '../../utils.js';
+/* eslint-disable camelcase */
+import { formatDate, getDuration } from '../../utils/common.js';
 
 function createOfferTemplate({title, price}){
   return `
