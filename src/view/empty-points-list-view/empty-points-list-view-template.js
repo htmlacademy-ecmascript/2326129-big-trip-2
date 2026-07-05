@@ -1,3 +1,3 @@
-export function createEmptyListPointsTemplate() {
-  return '<p class="trip-events__msg">Click New Event to create your first point</p>';
+export function createEmptyListPointsTemplate(text) {
+  return `<p class="trip-events__msg">${text}</p>`;
 }

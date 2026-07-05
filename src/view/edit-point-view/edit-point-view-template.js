@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { formatDate } from '../../utils/common.js';
 import { POINT_TYPES } from '../../const.js';
 
@@ -5,7 +6,6 @@ const upFirstLetter = (word) => `${word[0].toUpperCase()}${word.slice(1)}`;
 const formatOfferTitle = (title) => title.split(' ').join('_');
 
 export function createEditPointTemplate(point, destinations, offers) {
-  // eslint-disable-next-line camelcase
   const {type, date_from, date_to, base_price} = point;
   const pointDestination = destinations.find((dest) => dest.id === point.destination);
   const typeOffers = offers.find((item) => item.type === point.type).offers;
