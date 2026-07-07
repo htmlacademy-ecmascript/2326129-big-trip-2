@@ -35,7 +35,7 @@ export default class BoardPresenter {
     if (this.#points.length === 0) {
       const message = EmptyPointsMessage[this.#currentFilter.toUpperCase()] || EmptyPointsMessage.EVERYTHING;
       this.#emptyListComponent = new EmptyPointsListView(message);
-      render(this.#emptyListComponent, this.#pointListComponent.element);
+      render(this.#emptyListComponent, this.#container);
       return;
     }
 
