@@ -1,18 +1,20 @@
-import PointListView from '../view/point-list-view/point-list-view';
+// import PointListView from '../view/point-list-view/point-list-view';
 import { render, replace } from '../framework/render';
 import EditPointView from '../view/edit-point-view/edit-point-view';
 import PointView from '../view/point-view/point-view';
 
 export default class PointPresenter {
+  #pointListComponent = null;
 
-  #pointListComponent = new PointListView();
-
-
-  init() {
-    this.#renderView();
+  constructor(element) {
+    this.#pointListComponent = element;
   }
 
-  #renderView({point, destinations, offers}){
+  init({point, destinations, offers}) {
+    this.#renderView(point, destinations, offers);
+  }
+
+  #renderView(point, destinations, offers){
     const escKeydownHandler = (evt) => {
       if(evt.key === 'Escape'){
         evt.preventDefault();
