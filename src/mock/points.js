@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid';
 import { getRandomElement } from '../utils/common';
 
 const points = [
@@ -315,7 +316,10 @@ const points = [
 
 
 function getRandomPoint () {
-  return getRandomElement(points);
+  return {
+    id: nanoid(),
+    ...getRandomElement(points)
+  };
 }
 
 export {getRandomPoint};
