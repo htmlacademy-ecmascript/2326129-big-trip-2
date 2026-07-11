@@ -14,6 +14,10 @@ export function formatDate(date, formatType) {
   return dayjs(date).format(formats[formatType] || formats.time);
 }
 
+export function updatePoint(points, updatedPoint) {
+  return points.map((point) => point.id === updatedPoint.id ? updatedPoint : point);
+}
+
 export function getDuration(dateFrom, dateTo) {
   const diffMs = dayjs(dateTo).diff(dayjs(dateFrom));
   const dur = dayjs.duration(diffMs);

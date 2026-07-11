@@ -1,33 +1,46 @@
-import PointListView from '../view/point-list-view/point-list-view';
 import { render, replace } from '../framework/render';
 import EditPointView from '../view/edit-point-view/edit-point-view';
 import PointView from '../view/point-view/point-view';
 
 export default class PointPresenter {
+  #container = null;
+  #onFavoriteClick = null;
+  #onOpenForm = null;
 
-  #pointListComponent = new PointListView();
+  #point = null;
+  #destinations = [];
+  #offers = [];
+  #pointComponent = null;
+  #pointEditComponent = null;
+  #isEditMode = false;
 
+  constructor({ container, onFavoriteClick, onOpenForm }) {
+    this.#container = container;
+    this.#onFavoriteClick = onFavoriteClick;
+    this.#onOpenForm = onOpenForm;
+  }
 
-  init() {
+  init({ point, destinations, offers }) {
+    this.#point = point;
+    this.#destinations = destinations;
+    this.#offers = offers;
     this.#renderView();
   }
 
-  #renderView({point, destinations, offers}){
-    const escKeydownHandler = (evt) => {
-      if(evt.key === 'Escape'){
-        evt.preventDefault();
-        replaceFormToPoint();
-        document.removeEventListener('keydown', escKeydownHandler);
-      }
-    };
+  #renderView() {
+    const point = this.#point;
+    const destinations = this.#destinations;
+    const offers = this.#offers;
 
     const pointComponent = new PointView({
       point,
       destinations,
       offers,
-      onRollupClick: () => {
-        replacePointToForm();
-        document.addEventListener('keydown', escKeydownHandler);
+      onRollupClick: () => this.#replacePointToForm(),
+      onClickFavoriteButton: (updatedPoint) => {
+        if(this.#onFavoriteClick){
+          this.#onFavoriteClick(updatedPoint);
+        }
       }
     });
 
@@ -35,24 +48,41 @@ export default class PointPresenter {
       point,
       destinations,
       offers,
-      onFormSubmit: () => {
-        replaceFormToPoint();
-        document.removeEventListener('keydown', escKeydownHandler);
-      },
-      onRollupClick: () => {
-        replaceFormToPoint();
-        document.removeEventListener('keydown', escKeydownHandler);
-      }
+      onFormSubmit: () => this.#replaceFormToPoint(),
+      onRollupClick: () => this.#replaceFormToPoint()
     });
 
-    function replacePointToForm () {
-      replace(pointEditComponent, pointComponent);
+    if (this.#pointComponent && this.#pointEditComponent) {
+      if (this.#isEditMode) {
+        replace(pointEditComponent, this.#pointEditComponent);
+      } else {
+        replace(pointComponent, this.#pointComponent);
+      }
+      this.#pointComponent = pointComponent;
+      this.#pointEditComponent = pointEditComponent;
+    } else {
+      this.#pointComponent = pointComponent;
+      this.#pointEditComponent = pointEditComponent;
+      render(pointComponent, this.#container.element);
     }
+  }
 
-    function replaceFormToPoint () {
-      replace(pointComponent, pointEditComponent);
+  #replacePointToForm() {
+    if (this.#onOpenForm) {
+      this.#onOpenForm(this.#point.id);
     }
+    replace(this.#pointEditComponent, this.#pointComponent);
+    this.#isEditMode = true;
+  }
 
-    render (pointComponent, this.#pointListComponent.element);
+  #replaceFormToPoint() {
+    replace(this.#pointComponent, this.#pointEditComponent);
+    this.#isEditMode = false;
+  }
+
+  reset() {
+    if (this.#isEditMode) {
+      this.#replaceFormToPoint();
+    }
   }
 }
