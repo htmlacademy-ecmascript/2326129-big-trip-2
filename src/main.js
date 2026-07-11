@@ -18,4 +18,3 @@ const filterView = new FilterView({filters});
 render(filterView, siteFilters);
 
 boardPresenter.init();
-
