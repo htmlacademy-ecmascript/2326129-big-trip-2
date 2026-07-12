@@ -24,3 +24,19 @@ export const getDefaultPoint = () => ({
   offers: [],
   type: POINT_TYPES[0]
 });
+
+export const sortItems = [
+  { type: 'day', isEnabled: true },
+  { type: 'event', isEnabled: false },
+  { type: 'time', isEnabled: true },
+  { type: 'price', isEnabled: true },
+  { type: 'offer', isEnabled: false }
+];
+
+export const SORT_LABELS = {
+  day: 'Day',
+  event: 'Event',
+  time: 'Time',
+  price: 'Price',
+  offer: 'Offers'
+};
