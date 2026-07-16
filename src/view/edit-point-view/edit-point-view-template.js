@@ -5,12 +5,14 @@ import { POINT_TYPES } from '../../const.js';
 const upFirstLetter = (word) => `${word[0].toUpperCase()}${word.slice(1)}`;
 const formatOfferTitle = (title) => title.split(' ').join('_');
 
-export function createEditPointTemplate(point, destinations, offers) {
-  const {type, date_from, date_to, base_price} = point;
-  const pointDestination = destinations.find((dest) => dest.id === point.destination);
-  const typeOffers = offers.find((item) => item.type === point.type).offers;
-  const pointOffers = typeOffers.filter((typeOffer) => point.offers.includes(typeOffer.id));
-  const {name, description, pictures} = pointDestination || {};
+export function createEditPointTemplate(point, destinations, offers, state) {
+  const { type, date_from, date_to, base_price, destination: destId, offers: selectedOfferIds } = state.point;
+
+  const pointDestination = destinations.find((dest) => dest.id === destId);
+  const typeOffers = offers.find((item) => item.type === type)?.offers || [];
+  const pointOffers = typeOffers.filter((typeOffer) => selectedOfferIds.includes(typeOffer.id));
+
+  const { name, description, pictures } = pointDestination || {};
   const pointId = point.id || null;
 
   return (`<li class="trip-events__item">
@@ -29,7 +31,7 @@ export function createEditPointTemplate(point, destinations, offers) {
 
             ${POINT_TYPES.map((pointType) => (
       `<div class="event__type-item">
-        <input id="event-type-${pointType}-${pointId}" class="event__type-input  visually-hidden" type="radio" name="event-type" value="${pointType} ${pointType === type ? 'checked' : ''}">
+        <input id="event-type-${pointType}-${pointId}" class="event__type-input  visually-hidden" type="radio" name="event-type" value="${pointType}" ${pointType === type ? 'checked' : ''}>
         <label class="event__type-label  event__type-label--${pointType}" for="event-type-${pointType}-${pointId}">${upFirstLetter(pointType)}</label>
       </div>`
     )).join('')};
@@ -42,9 +44,9 @@ export function createEditPointTemplate(point, destinations, offers) {
                     <label class="event__label  event__type-output" for="event-destination-${pointId}">
                       ${type}
                     </label>
-                    <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value=${name || '&nbsp;'} list="destination-list-${pointId}">
+                    <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value="${name || ''}" list="destination-list-${pointId}">
                     <datalist id="destination-list-${pointId}">
-                    ${destinations.map((destination) => `<option value = "${destination.name}"></option>`).join('')}
+                    ${destinations.map((destination) => `<option value="${destination.name}"></option>`).join('')}
                     </datalist>
                   </div>
 
@@ -57,11 +59,11 @@ export function createEditPointTemplate(point, destinations, offers) {
                   </div>
 
                   <div class="event__field-group  event__field-group--price">
-                    <label class="event__label" for="event-price-">
+                    <label class="event__label" for="event-price-${pointId}">
                       <span class="visually-hidden">Price</span>
                       &euro;
                     </label>
-                    <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value=${base_price}>
+                    <input class="event__input  event__input--price" id="event-price-${pointId}" type="text" name="event-price" value="${base_price}">
                   </div>
 
                   <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
@@ -83,8 +85,8 @@ export function createEditPointTemplate(point, destinations, offers) {
 
                     ${typeOffers.map((typeOffer) => (
       `<div class="event__offer-selector">
-                        <input class="event__offer-checkbox  visually-hidden" id="event-offer-${formatOfferTitle(typeOffer.title)}-${pointId}" type="checkbox" name="event-offer-${formatOfferTitle(typeOffer.title)}" ${pointOffers.map((offer) => offer.id).includes(typeOffer.id) ? 'checked' : ''}>
-                        <label class="event__offer-label" for="event-offer-${typeOffer.title}-${pointId}">
+                        <input class="event__offer-checkbox  visually-hidden" id="event-offer-${formatOfferTitle(typeOffer.title)}-${pointId}" type="checkbox" name="event-offer-${formatOfferTitle(typeOffer.title)}" ${pointOffers.some((offer) => offer.id === typeOffer.id) ? 'checked' : ''}>
+                        <label class="event__offer-label" for="event-offer-${formatOfferTitle(typeOffer.title)}-${pointId}">
                           <span class="event__offer-title">${typeOffer.title}</span>
                           &plus;&euro;&nbsp;
                           <span class="event__offer-price">${typeOffer.price}</span>
@@ -95,14 +97,14 @@ export function createEditPointTemplate(point, destinations, offers) {
                   </section>`
       : ''}
 
-                  ${pointDestination && (pointDestination.description || pictures.length) ? (
+                  ${pointDestination && (pointDestination.description || pictures?.length) ? (
       `<section class="event__section  event__section--destination">
                     <h3 class="event__section-title  event__section-title--destination">Destination</h3>
-                    <p class="event__destination-description">${description}</p>
-                    ${pictures.length ? (
+                    <p class="event__destination-description">${description || ''}</p>
+                    ${pictures?.length ? (
         `<div class="event__photos-container">
                           <div class="event__photos-tape">
-                          ${pictures.map((pic) => `<img class="event__photo" src="${pic.src}" alt="${pic.description}">`)}
+                          ${pictures.map((pic) => `<img class="event__photo" src="${pic.src}" alt="${pic.description}">`).join('')}
                         </div>
                       </div>`
       ) : ''}
