@@ -1,9 +1,15 @@
+/* eslint-disable camelcase */
 import { createEditPointTemplate } from './edit-point-view-template.js';
 import AbstractStatefulView from '../../framework/view/abstract-stateful-view.js';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
 
 export default class EditPointView extends AbstractStatefulView {
   #handleFormSubmit = null;
   #handleFormClose = null;
+  #datepicker = null;
+  #datepickerFrom = null;
+  #datepickerTo = null;
 
   constructor({ point, destinations, offers, onFormSubmit, onRollupClick }) {
     super();
@@ -97,6 +103,28 @@ export default class EditPointView extends AbstractStatefulView {
       }
     });
   };
+
+  #setDatepicker() {
+    this.#datepickerFrom = flatpickr(
+      this.element.querySelector('input[name="event-start-time"]'),
+      {
+        dateFormat: 'd/m/y H:i',
+        enableTime: true,
+        time_24hr: true,
+        defaultDate: this._state.dateFrom,
+        minDate: 'today'
+      });
+    this.#datepickerTo = flatpickr(
+      this.element.querySelector('input[name="event-end-time"]'),
+      {
+        dateFormat: 'd/m/y H:i',
+        enableTime: true,
+        time_24hr: true,
+        defaultDate:this._state.dateTo,
+        minDate: 'today'
+      }
+    );
+  }
 
   static parsePointToState = ({ point }) => ({ point });
 
