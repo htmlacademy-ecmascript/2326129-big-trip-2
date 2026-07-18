@@ -5,15 +5,15 @@ import { POINT_TYPES } from '../../const.js';
 const upFirstLetter = (word) => `${word[0].toUpperCase()}${word.slice(1)}`;
 const formatOfferTitle = (title) => title.split(' ').join('_');
 
-export function createEditPointTemplate(point, destinations, offers, state) {
-  const { type, date_from, date_to, base_price, destination: destId, offers: selectedOfferIds } = state.point;
+export function createEditPointTemplate(destinations, offers, state) {
+  const {id, type, date_from, date_to, base_price, destination: destId, offers: selectedOfferIds } = state.point;
 
   const pointDestination = destinations.find((dest) => dest.id === destId);
   const typeOffers = offers.find((item) => item.type === type)?.offers || [];
   const pointOffers = typeOffers.filter((typeOffer) => selectedOfferIds.includes(typeOffer.id));
 
   const { name, description, pictures } = pointDestination || {};
-  const pointId = point.id || null;
+  const pointId = id;
 
   return (`<li class="trip-events__item">
               <form class="event event--edit" action="#" method="post">
@@ -67,8 +67,8 @@ export function createEditPointTemplate(point, destinations, offers, state) {
                   </div>
 
                   <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
-                  <button class="event__reset-btn" type="reset">${point.id ? 'Delete' : 'Cancel'}</button>
-                  ${point.id ? (
+                  <button class="event__reset-btn" type="reset">${pointId ? 'Delete' : 'Cancel'}</button>
+                  ${pointId ? (
       `<button class="event__rollup-btn" type="button">
                     <span class="visually-hidden">Open event</span>
                   </button>`

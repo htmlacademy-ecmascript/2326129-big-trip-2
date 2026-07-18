@@ -24,10 +24,10 @@ export default class EditPointView extends AbstractStatefulView {
   }
 
   get template() {
-    return createEditPointTemplate(this.point, this.destinations, this.offers, this._state);
+    return createEditPointTemplate(this.destinations, this.offers, this._state);
   }
 
-  reset = (point) => this.updateElement({ point });
+  reset = () => this.updateElement({ point: this.point });
 
   _restoreHandlers = () => {
     const rollupBtn = this.element.querySelector('.event__rollup-btn');
@@ -42,8 +42,8 @@ export default class EditPointView extends AbstractStatefulView {
 
     this.element.querySelector('form').addEventListener('submit', this.#submitFormHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#typeChangeHandler);
-    this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
-    this.element.querySelector('.event__available-offers').addEventListener('change', this.#offersChangeHandler);
+    this.element.querySelector('.event__input--destination')?.addEventListener('change', this.#destinationChangeHandler);
+    this.element.querySelector('.event__available-offers')?.addEventListener('change', this.#offersChangeHandler);
     this.element.querySelector('.event__input--price').addEventListener('change', this.#priceChangeHandler);
   };
 
