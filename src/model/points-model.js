@@ -1,15 +1,19 @@
 import { getRandomPoint } from '../mock/points';
 import { offers } from '../mock/offers';
 import { destinations } from '../mock/destinations';
+import Observable from '../framework/observable';
+import { updatePoint } from '../utils/common';
 
 const POINTS_COUNT = 3;
 
-export default class Points {
+export default class Points extends Observable {
+
   #travelPoints = null;
   #offers = null;
   #destinations = null;
 
   constructor(){
+    super();
     this.#travelPoints = [];
     this.#offers = [];
     this.#destinations = [];
@@ -25,6 +29,10 @@ export default class Points {
     return this.#travelPoints;
   }
 
+  set travelPoints(points) {
+    this.#travelPoints = [...points];
+  }
+
   get offers(){
     return this.#offers;
   }
@@ -32,4 +40,32 @@ export default class Points {
   get destinations(){
     return this.#destinations;
   }
+
+  updatePoint (updateType, updatedPoint) {
+    this.#travelPoints = updatePoint(this.#travelPoints, updatedPoint);
+    this._notify(updateType, updatedPoint.id);
+  }
+
+  addPoint (updateType, newPoint) {
+    this.#travelPoints.push(newPoint);
+    this._notify(updateType);
+  }
+
+  deletePoint(updateType, point) {
+    this.#travelPoints = this.#travelPoints.filter((item) => item.id !== point.id);
+    this._notify(updateType);
+  }
+
+  getContentById(id) {
+    const point = this.#travelPoints.find((item) => item.id === id);
+    const destination = this.#destinations.find((item) => item.id === point.destinations);
+    const offers = this.#offers.find((item) => item.type === point.type.toLowerCase());
+    return {
+      point: point ?? {},
+      destination: destination ?? {},
+      offers: offers.offers ?? {}
+    };
+  }
 }
+
+

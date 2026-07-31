@@ -40,3 +40,21 @@ export const SORT_LABELS = {
   price: 'Price',
   offer: 'Offers'
 };
+
+export const ModeTypes = {
+  DEFAULT: 'default',
+  EDIT: 'edit',
+  NEW: 'new'
+};
+
+export const UserActions = {
+  UPDATE_EVENT: 'UPDATE_EVENT',
+  ADD_EVENT: 'ADD_EVENT',
+  DELETE_EVENT: 'DELETE_EVENT'
+};
+
+export const UpdateType = {
+  PATCH: 'PATCH',
+  MINOR: 'MINOR',
+  MAJOR: 'MAJOR'
+};

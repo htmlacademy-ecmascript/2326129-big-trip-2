@@ -2,7 +2,7 @@ import PointListView from '../view/point-list-view/point-list-view';
 import SortingView from '../view/sorting-view/sorting-view';
 import { render, remove } from '../framework/render.js';
 import EmptyPointsListView from '../view/empty-points-list-view/empty-points-list-view.js';
-import { EmptyPointsMessage } from '../const.js';
+import { EmptyPointsMessage, UpdateType, UserActions } from '../const.js';
 import PointPresenter from './point-presenter.js';
 import { updatePoint } from '../utils/common.js';
 import { sortItems } from '../const.js';
@@ -19,10 +19,14 @@ export default class BoardPresenter {
   #pointListComponent = null;
   #emptyListComponent = null;
   #pointsPresenter = new Map();
+  #filtersModel = null;
 
-  constructor({ container, pointsModel }) {
+  constructor({ container, pointsModel, filtersModel }) {
     this.#container = container;
     this.#pointsModel = pointsModel;
+    this.#filtersModel = filtersModel;
+    this.#filtersModel.addObserver(this.#handleModelChange);
+    this.#pointsModel.addObserver(this.#handleModelChange);
   }
 
   init() {
@@ -119,15 +123,46 @@ export default class BoardPresenter {
     this.#renderBoard();
   }
 
-  #handlePointChange = (updatedPoint) => {
-    this.#points = updatePoint(this.#points, updatedPoint);
-    const presenter = this.#pointsPresenter.get(updatedPoint.id);
-    if (presenter) {
-      presenter.init({
-        point: updatedPoint,
-        destinations: this.#destinations,
-        offers: this.#offers
-      });
+  // #handlePointChange = (updatedPoint) => {
+  //   this.#points = updatePoint(this.#points, updatedPoint);
+  //   const presenter = this.#pointsPresenter.get(updatedPoint.id);
+  //   if (presenter) {
+  //     presenter.init({
+  //       point: updatedPoint,
+  //       destinations: this.#destinations,
+  //       offers: this.#offers
+  //     });
+  //   }
+  // };
+
+  #handlePointChange = (actionType, updateType, newPoint) => {
+    switch(actionType) {
+      case UserActions.ADD_EVENT:
+        this.#pointsModel.addPoint(updateType, newPoint);
+        break;
+      case UserActions.UPDATE_EVENT:
+        this.#pointsModel.updatePoint(updateType, newPoint);
+        break;
+      case UserActions.DELETE_EVENT:
+        this.#pointsModel.deletePoint(updateType, newPoint);
+        break;
+    }
+  };
+
+  #handleModelChange = (updateType, id) => {
+    switch(updateType) {
+      case UpdateType.PATCH:
+        this.#pointsPresenter.get(id).init(this.#pointsModel.getContentById(id));
+        break;
+      case UpdateType.MINOR:
+        this.#clearBoard();
+        this.#renderBoard();
+        break;
+      case UpdateType.MAJOR:
+        this.#clearBoard();
+        this.#currentSortType = 'day';
+        this.init();
+        break;
     }
   };
 
