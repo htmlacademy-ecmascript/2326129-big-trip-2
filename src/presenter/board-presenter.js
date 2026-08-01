@@ -4,8 +4,8 @@ import { render, remove } from '../framework/render.js';
 import EmptyPointsListView from '../view/empty-points-list-view/empty-points-list-view.js';
 import { EmptyPointsMessage, UpdateType, UserActions } from '../const.js';
 import PointPresenter from './point-presenter.js';
-import { updatePoint } from '../utils/common.js';
 import { sortItems } from '../const.js';
+import { filter } from '../utils/filter.js';
 
 export default class BoardPresenter {
   #container = null;
@@ -20,6 +20,7 @@ export default class BoardPresenter {
   #emptyListComponent = null;
   #pointsPresenter = new Map();
   #filtersModel = null;
+  #newEventButtonComponent = null;
 
   constructor({ container, pointsModel, filtersModel }) {
     this.#container = container;
@@ -33,12 +34,14 @@ export default class BoardPresenter {
     this.#points = [...this.#pointsModel.travelPoints];
     this.#offers = [...this.#pointsModel.offers];
     this.#destinations = [...this.#pointsModel.destinations];
+    this.#currentFilter = this.#filtersModel.filter;
+    this.#filterPoints();
     this.#renderBoard();
   }
 
   #renderBoard() {
-    this.#clearBoard();
-
+    // this.#clearBoard();
+    // console.log(this.#filtersModel.filter);
     if (this.#points.length === 0) {
       const message = EmptyPointsMessage[this.#currentFilter.toUpperCase()] || EmptyPointsMessage.EVERYTHING;
       this.#emptyListComponent = new EmptyPointsListView(message);
@@ -69,6 +72,10 @@ export default class BoardPresenter {
       });
       this.#pointsPresenter.set(point.id, pointPresenter);
     });
+
+    if(!this.#newEventButtonComponent) {
+      this.#newTravelPointButtonComponent = new NewEventButton ()
+    }
   }
 
   #clearBoard() {
@@ -96,7 +103,12 @@ export default class BoardPresenter {
     this.#renderBoard();
   };
 
+  #filterPoints(){
+    this.#points = [...filter[this.#currentFilter](this.#points)];
+  }
+
   #sortPoints() {
+    this.#clearBoard();
     switch (this.#currentSortType) {
       case 'day':
         this.#points.sort((a, b) => new Date(a.date_from) - new Date(b.date_from));
@@ -123,25 +135,13 @@ export default class BoardPresenter {
     this.#renderBoard();
   }
 
-  // #handlePointChange = (updatedPoint) => {
-  //   this.#points = updatePoint(this.#points, updatedPoint);
-  //   const presenter = this.#pointsPresenter.get(updatedPoint.id);
-  //   if (presenter) {
-  //     presenter.init({
-  //       point: updatedPoint,
-  //       destinations: this.#destinations,
-  //       offers: this.#offers
-  //     });
-  //   }
-  // };
-
   #handlePointChange = (actionType, updateType, newPoint) => {
     switch(actionType) {
       case UserActions.ADD_EVENT:
         this.#pointsModel.addPoint(updateType, newPoint);
         break;
       case UserActions.UPDATE_EVENT:
-        this.#pointsModel.updatePoint(updateType, newPoint);
+        this.#pointsModel.updateTravelPoints(updateType, newPoint);
         break;
       case UserActions.DELETE_EVENT:
         this.#pointsModel.deletePoint(updateType, newPoint);

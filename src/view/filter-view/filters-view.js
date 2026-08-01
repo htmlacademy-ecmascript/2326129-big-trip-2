@@ -4,9 +4,18 @@ import AbstractView from '../../framework/view/abstract-view.js';
 export default class FilterView extends AbstractView {
 
   #filters = null;
-  constructor({filters}) {
+  constructor({filters, onFilterChange}) {
     super();
     this.#filters = filters;
+    this.onFilterChange = onFilterChange;
+    this.registerEventsListener();
+  }
+
+  registerEventsListener() {
+    this.element?.addEventListener('input', (evt) => {
+      const filterType = evt.target.id.replace('filter-', '');
+      this.onFilterChange(filterType);
+    });
   }
 
   get template() {
