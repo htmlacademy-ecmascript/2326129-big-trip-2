@@ -1,6 +1,7 @@
 import { remove, render, replace } from '../framework/render';
 import EditPointView from '../view/edit-point-view/edit-point-view';
 import PointView from '../view/point-view/point-view';
+import { UserActions, UpdateType } from '../const';
 
 export default class PointPresenter {
   #container = null;
@@ -27,6 +28,35 @@ export default class PointPresenter {
     this.#renderView();
   }
 
+  updateData({ point, destinations, offers } = {}) {
+    if (point !== undefined) {
+      this.#point = point;
+    }
+    if (destinations !== undefined) {
+      this.#destinations = destinations;
+    }
+    if (offers !== undefined) {
+      this.#offers = offers;
+    }
+    // теперь this.#offers точно не undefined, если был определён ранее
+
+    if (!this.#isEditMode) {
+      const newPointComponent = new PointView({
+        point: this.#point,
+        destinations: this.#destinations,
+        offers: this.#offers,
+        onRollupClick: () => this.#replacePointToForm(),
+        onClickFavoriteButton: (updatedPoint) => {
+          if (this.#onFavoriteClick) {
+            this.#onFavoriteClick(UserActions.UPDATE_EVENT, UpdateType.PATCH, updatedPoint);
+          }
+        }
+      });
+      replace(newPointComponent, this.#pointComponent);
+      this.#pointComponent = newPointComponent;
+    }
+  }
+
   #renderView() {
     const point = this.#point;
     const destinations = this.#destinations;
@@ -39,7 +69,7 @@ export default class PointPresenter {
       onRollupClick: () => this.#replacePointToForm(),
       onClickFavoriteButton: (updatedPoint) => {
         if(this.#onFavoriteClick){
-          this.#onFavoriteClick(updatedPoint);
+          this.#onFavoriteClick(UserActions.UPDATE_EVENT, UpdateType.PATCH, updatedPoint);
         }
       }
     });
@@ -68,9 +98,27 @@ export default class PointPresenter {
   }
 
   #replacePointToForm() {
+    // Уведомляем доску об открытии формы
     if (this.#onOpenForm) {
       this.#onOpenForm(this.#point.id);
     }
+
+    // 1. Удаляем старый компонент формы, если он существует
+    if (this.#pointEditComponent) {
+      remove(this.#pointEditComponent);
+      this.#pointEditComponent = null;
+    }
+
+    // 2. Создаём новый компонент с чистыми исходными данными
+    this.#pointEditComponent = new EditPointView({
+      point: this.#point,// исходный объект, не менялся
+      destinations: this.#destinations,
+      offers: this.#offers,
+      onFormSubmit: () => this.#replaceFormToPoint(),
+      onRollupClick: () => this.#replaceFormToPoint()
+    });
+
+    // 3. Заменяем отображение точки на новую форму
     replace(this.#pointEditComponent, this.#pointComponent);
     document.addEventListener('keydown', this.#escKeyDownHandler);
     this.#isEditMode = true;
@@ -80,12 +128,18 @@ export default class PointPresenter {
     this.#pointEditComponent.reset();
     replace(this.#pointComponent, this.#pointEditComponent);
     document.removeEventListener('keydown', this.#escKeyDownHandler);
+    // Возвращаем отображение точки
+    replace(this.#pointComponent, this.#pointEditComponent);
+
+    // Удаляем компонент формы, стирая все изменения в полях
+    remove(this.#pointEditComponent);
+    this.#pointEditComponent = null;
     this.#isEditMode = false;
   }
 
   reset() {
     if (this.#isEditMode) {
-      this.#replaceFormToPoint();
+      this.#replaceFormToPoint(); // закроет форму и удалит её
     }
   }
 

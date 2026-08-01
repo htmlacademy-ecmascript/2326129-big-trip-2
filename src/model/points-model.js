@@ -52,14 +52,24 @@ export default class TravelPoints extends Observable {
     this._notify(updateType);
   }
 
+  // getContentById(id) {
+  //   const point = this.#travelPoints.find((item) => item.id === id);
+  //   const destination = this.#destinations.find((item) => item.id === point.destinations);
+  //   const offers = this.#offers.find((item) => item.type === point.type.toLowerCase());
+  //   return {
+  //     point: point ?? {},
+  //     destination: destination ?? {},
+  //     offers: offers.offers ?? {}
+  //   };
+  // }
+
   getContentById(id) {
     const point = this.#travelPoints.find((item) => item.id === id);
     const destination = this.#destinations.find((item) => item.id === point.destinations);
-    const offers = this.#offers.find((item) => item.type === point.type.toLowerCase());
     return {
       point: point ?? {},
       destination: destination ?? {},
-      offers: offers.offers ?? {}
+      offers: this.#offers
     };
   }
 }

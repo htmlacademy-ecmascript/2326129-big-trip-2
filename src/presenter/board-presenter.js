@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import PointListView from '../view/point-list-view/point-list-view';
 import SortingView from '../view/sorting-view/sorting-view';
 import { render, remove } from '../framework/render.js';
@@ -6,6 +7,8 @@ import { EmptyPointsMessage, UpdateType, UserActions } from '../const.js';
 import PointPresenter from './point-presenter.js';
 import { sortItems } from '../const.js';
 import { filter } from '../utils/filter.js';
+// import NewEventButton from '../view/new-event-button/new-event-button-view.js';
+// import { POINT_TYPES } from '../const.js';
 
 export default class BoardPresenter {
   #container = null;
@@ -16,6 +19,7 @@ export default class BoardPresenter {
   #currentFilter = 'everything';
   #currentSortType = 'day';
   #sortComponent = null;
+  #mainElement = document.querySelector('.trip-main');
   #pointListComponent = null;
   #emptyListComponent = null;
   #pointsPresenter = new Map();
@@ -73,9 +77,10 @@ export default class BoardPresenter {
       this.#pointsPresenter.set(point.id, pointPresenter);
     });
 
-    if(!this.#newEventButtonComponent) {
-      this.#newTravelPointButtonComponent = new NewEventButton ()
-    }
+    // if(!this.#newEventButtonComponent) {
+    //   this.#newEventButtonComponent = new NewEventButton({onClick: this.#handleNewEventButtonClick});
+    //   render(this.#newEventButtonComponent, this.#mainElement);
+    // }
   }
 
   #clearBoard() {
@@ -152,7 +157,7 @@ export default class BoardPresenter {
   #handleModelChange = (updateType, id) => {
     switch(updateType) {
       case UpdateType.PATCH:
-        this.#pointsPresenter.get(id).init(this.#pointsModel.getContentById(id));
+        this.#pointsPresenter.get(id).updateData(this.#pointsModel.getContentById(id));
         break;
       case UpdateType.MINOR:
         this.#clearBoard();
@@ -173,4 +178,19 @@ export default class BoardPresenter {
       }
     });
   };
+
+  // #handleNewEventButtonClick() {
+  // this.#handleModelChange(null);
+  //   const pointPresenter = new PointPresenter({
+  //     container: this.#container,
+  //     onFavoriteClick: false,
+  //     onOpenForm: true,
+  //     date_from: new Date().toISOString(),
+  //     date_to: new Date().toISOString(),
+  //     destination: 0,
+  //     offers: [],
+  //     type: POINT_TYPES[0]
+  //   });
+  //   pointPresenter.init();
+  // }
 }
