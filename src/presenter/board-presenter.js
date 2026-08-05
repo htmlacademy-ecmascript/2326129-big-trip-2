@@ -205,12 +205,12 @@ export default class BoardPresenter {
     }
     this.#pointsPresenter.forEach((presenter) => presenter.reset());
     this.#destroyNewPointPresenter();
-    this.#pointsPresenter.forEach((presenter) => presenter.reset());
-    this.#destroyNewPointPresenter();
+    // this.#pointsPresenter.forEach((presenter) => presenter.reset());
+    // this.#destroyNewPointPresenter();
 
     const defaultPoint = getDefaultPoint();
     this.#newPointPresenter = new PointPresenter({
-      container: { element: this.#container },
+      container: { element: document.querySelector('.trip-events__list') },
       onDataChange: this.#handlePointChange,
       onOpenForm: this.#handleFormOpen
     });

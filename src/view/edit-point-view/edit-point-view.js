@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { createEditPointTemplate } from './edit-point-view-template.js';
 import AbstractStatefulView from '../../framework/view/abstract-stateful-view.js';
 
-const DATE_TIME_FORMAT = 'Y-m-d\\TH:i';
+const DATE_TIME_FORMAT = 'd/m/y\\ H:i';
 
 const formatOfferTitle = (title) => title.split(' ').join('_');
 
