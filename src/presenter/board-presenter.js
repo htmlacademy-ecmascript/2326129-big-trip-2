@@ -26,6 +26,7 @@ export default class BoardPresenter {
   #newEventButtonComponent = null;
   #newPointPresenter = null;
   #pendingNewPoint = false;
+  #temporaryListComponent = null;
 
   constructor({ container, pointsModel, filtersModel }) {
     this.#container = container;
@@ -95,7 +96,12 @@ export default class BoardPresenter {
       remove(this.#emptyListComponent);
       this.#emptyListComponent = null;
     }
+    if (this.#temporaryListComponent) {
+      remove(this.#temporaryListComponent);
+      this.#temporaryListComponent = null;
+    }
     this.#pointsPresenter.clear();
+    this.#destroyNewPointPresenter();
   }
 
   #handleSortChange = (sortType) => {
@@ -197,28 +203,39 @@ export default class BoardPresenter {
       this.#newPointPresenter.destroy();
       this.#newPointPresenter = null;
     }
+    if (this.#temporaryListComponent && this.#points.length === 0) {
+      remove(this.#temporaryListComponent);
+      this.#temporaryListComponent = null;
+    }
   }
 
   #createNewPointForm() {
     if (this.#newPointPresenter) {
       return;
     }
+
     this.#pointsPresenter.forEach((presenter) => presenter.reset());
     this.#destroyNewPointPresenter();
-    // this.#pointsPresenter.forEach((presenter) => presenter.reset());
-    // this.#destroyNewPointPresenter();
 
     const defaultPoint = getDefaultPoint();
+    let listElement = this.#container.querySelector('.trip-events__list');
+    if (!listElement) {
+      const pointListComponent = new PointListView();
+      render(pointListComponent, this.#container);
+      listElement = pointListComponent.element;
+      this.#temporaryListComponent = pointListComponent;
+    }
+
     this.#newPointPresenter = new PointPresenter({
-      container: { element: document.querySelector('.trip-events__list') },
+      container: { element: listElement },
       onDataChange: this.#handlePointChange,
-      onOpenForm: this.#handleFormOpen
+      onOpenForm: this.#handleFormOpen,
     });
     this.#newPointPresenter.initNewPoint({
       point: defaultPoint,
       destinations: this.#destinations,
       offers: this.#offers,
-      onClose: () => this.#destroyNewPointPresenter()
+      onClose: () => this.#destroyNewPointPresenter(),
     });
   }
 
@@ -229,6 +246,5 @@ export default class BoardPresenter {
     this.#pendingNewPoint = true;
     this.#filtersModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
   };
-
 
 }

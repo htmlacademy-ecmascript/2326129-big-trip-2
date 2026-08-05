@@ -1,4 +1,3 @@
-
 /* eslint-disable camelcase */
 import { formatDate } from '../../utils/common.js';
 import { POINT_TYPES } from '../../const.js';
@@ -7,8 +6,8 @@ import he from 'he';
 const upFirstLetter = (word) => `${word[0].toUpperCase()}${word.slice(1)}`;
 const formatOfferTitle = (title) => title.split(' ').join('_');
 
-export function createEditPointTemplate(destinations, offers, state) {
-  const {id, type, date_from, date_to, base_price, destination: destId, offers: selectedOfferIds } = state.point;
+export function createEditPointTemplate(point, destinations, offers) {
+  const { id, type, date_from, date_to, base_price, destination: destId, offers: selectedOfferIds } = point;
 
   const pointDestination = destinations.find((dest) => dest.id === destId);
   const typeOffers = offers.find((item) => item.type === type)?.offers || [];

@@ -43,5 +43,4 @@ export function getDuration(dateFrom, dateTo) {
 }
 const getRandomElement = (items) => items[Math.floor(Math.random() * items.length)];
 
-
 export {getRandomElement};
