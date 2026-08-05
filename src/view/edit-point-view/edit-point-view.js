@@ -127,9 +127,9 @@ export default class EditPointView extends AbstractStatefulView {
     if (!destination) {
       destinationInput.setCustomValidity('Выберите город из списка');
       destinationInput.reportValidity();
-      return null; // не возвращаем точку
+      return null;
     } else {
-      destinationInput.setCustomValidity(''); // сбрасываем ошибку
+      destinationInput.setCustomValidity('');
     }
 
     const selectedOffers = typeOffers
