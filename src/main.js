@@ -1,8 +1,5 @@
-import FilterView from './view/filter-view/filters-view.js';
-import { render } from './render.js';
 import BoardPresenter from './presenter/board-presenter.js';
 import TravelPoints from './model/points-model.js';
-import { generateFilter } from './mock/filter.js';
 import FilterPresenter from './presenter/filter-presenter.js';
 import FiltersModel from './model/filters-model.js';
 

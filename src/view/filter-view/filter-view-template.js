@@ -15,7 +15,7 @@ function createFilterItemTemplate(filter, isChecked) {
 }
 
 export function createFilterTemplate(filterPoints) {
-  const filterPointsTemplate = filterPoints.map((filter, index) => createFilterItemTemplate(filter, index === 0)).join('');
+  const filterPointsTemplate = filterPoints.map((filter) => createFilterItemTemplate(filter, filter.isChecked)).join('');
 
   return (
     `<form class="trip-filters" action="#" method="get">

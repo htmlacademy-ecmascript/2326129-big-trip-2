@@ -1,12 +1,14 @@
-import { remove, render, replace } from '../framework/render';
+import { nanoid } from 'nanoid';
+import { render, replace, remove, RenderPosition } from '../framework/render';
 import EditPointView from '../view/edit-point-view/edit-point-view';
 import PointView from '../view/point-view/point-view';
 import { UserActions, UpdateType } from '../const';
 
 export default class PointPresenter {
   #container = null;
-  #onFavoriteClick = null;
+  #onDataChange = null;
   #onOpenForm = null;
+  #onClose = null;
 
   #point = null;
   #destinations = [];
@@ -14,10 +16,11 @@ export default class PointPresenter {
   #pointComponent = null;
   #pointEditComponent = null;
   #isEditMode = false;
+  #isNewPoint = false;
 
-  constructor({ container, onFavoriteClick, onOpenForm }) {
+  constructor({ container, onDataChange, onOpenForm }) {
     this.#container = container;
-    this.#onFavoriteClick = onFavoriteClick;
+    this.#onDataChange = onDataChange;
     this.#onOpenForm = onOpenForm;
   }
 
@@ -26,6 +29,26 @@ export default class PointPresenter {
     this.#destinations = destinations;
     this.#offers = offers;
     this.#renderView();
+  }
+
+  initNewPoint({ point, destinations, offers, onClose }) {
+    this.#point = point;
+    this.#destinations = destinations;
+    this.#offers = offers;
+    this.#onClose = onClose;
+    this.#isNewPoint = true;
+
+    this.#pointEditComponent = new EditPointView({
+      point,
+      destinations,
+      offers,
+      onFormSubmit: this.#handleNewPointSubmit,
+      onRollupClick: this.#handleNewPointClose,
+      onDeleteClick: this.#handleNewPointClose,
+    });
+
+    render(this.#pointEditComponent, this.#container.element, RenderPosition.AFTERBEGIN);
+    this.#isEditMode = true;
   }
 
   updateData({ point, destinations, offers } = {}) {
@@ -38,7 +61,6 @@ export default class PointPresenter {
     if (offers !== undefined) {
       this.#offers = offers;
     }
-    // теперь this.#offers точно не undefined, если был определён ранее
 
     if (!this.#isEditMode) {
       const newPointComponent = new PointView({
@@ -47,14 +69,27 @@ export default class PointPresenter {
         offers: this.#offers,
         onRollupClick: () => this.#replacePointToForm(),
         onClickFavoriteButton: (updatedPoint) => {
-          if (this.#onFavoriteClick) {
-            this.#onFavoriteClick(UserActions.UPDATE_EVENT, UpdateType.PATCH, updatedPoint);
-          }
-        }
+          this.#onDataChange?.(UserActions.UPDATE_EVENT, UpdateType.PATCH, updatedPoint);
+        },
       });
       replace(newPointComponent, this.#pointComponent);
       this.#pointComponent = newPointComponent;
     }
+  }
+
+  destroy() {
+    if (this.#pointEditComponent) {
+      remove(this.#pointEditComponent);
+      this.#pointEditComponent = null;
+    }
+
+    if (this.#pointComponent) {
+      remove(this.#pointComponent);
+      this.#pointComponent = null;
+    }
+
+    this.#isEditMode = false;
+    this.#isNewPoint = false;
   }
 
   #renderView() {
@@ -68,18 +103,17 @@ export default class PointPresenter {
       offers,
       onRollupClick: () => this.#replacePointToForm(),
       onClickFavoriteButton: (updatedPoint) => {
-        if(this.#onFavoriteClick){
-          this.#onFavoriteClick(UserActions.UPDATE_EVENT, UpdateType.PATCH, updatedPoint);
-        }
-      }
+        this.#onDataChange?.(UserActions.UPDATE_EVENT, UpdateType.PATCH, updatedPoint);
+      },
     });
 
     const pointEditComponent = new EditPointView({
       point,
       destinations,
       offers,
-      onFormSubmit: () => this.#replaceFormToPoint(),
-      onRollupClick: () => this.#replaceFormToPoint()
+      onFormSubmit: this.#handleEditPointSubmit,
+      onRollupClick: () => this.#replaceFormToPoint(),
+      onDeleteClick: this.#handleDeleteClick,
     });
 
     if (this.#pointComponent && this.#pointEditComponent) {
@@ -98,27 +132,24 @@ export default class PointPresenter {
   }
 
   #replacePointToForm() {
-    // Уведомляем доску об открытии формы
     if (this.#onOpenForm) {
       this.#onOpenForm(this.#point.id);
     }
 
-    // 1. Удаляем старый компонент формы, если он существует
     if (this.#pointEditComponent) {
       remove(this.#pointEditComponent);
       this.#pointEditComponent = null;
     }
 
-    // 2. Создаём новый компонент с чистыми исходными данными
     this.#pointEditComponent = new EditPointView({
-      point: this.#point,// исходный объект, не менялся
+      point: this.#point,
       destinations: this.#destinations,
       offers: this.#offers,
-      onFormSubmit: () => this.#replaceFormToPoint(),
-      onRollupClick: () => this.#replaceFormToPoint()
+      onFormSubmit: this.#handleEditPointSubmit,
+      onRollupClick: () => this.#replaceFormToPoint(),
+      onDeleteClick: this.#handleDeleteClick,
     });
 
-    // 3. Заменяем отображение точки на новую форму
     replace(this.#pointEditComponent, this.#pointComponent);
     document.addEventListener('keydown', this.#escKeyDownHandler);
     this.#isEditMode = true;
@@ -128,24 +159,35 @@ export default class PointPresenter {
     this.#pointEditComponent.reset();
     replace(this.#pointComponent, this.#pointEditComponent);
     document.removeEventListener('keydown', this.#escKeyDownHandler);
-    // Возвращаем отображение точки
     replace(this.#pointComponent, this.#pointEditComponent);
-
-    // Удаляем компонент формы, стирая все изменения в полях
     remove(this.#pointEditComponent);
     this.#pointEditComponent = null;
     this.#isEditMode = false;
   }
 
-  reset() {
-    if (this.#isEditMode) {
-      this.#replaceFormToPoint(); // закроет форму и удалит её
-    }
-  }
+  #handleEditPointSubmit = (updatedPoint) => {
+    this.#onDataChange?.(UserActions.UPDATE_EVENT, UpdateType.MINOR, updatedPoint);
+  };
 
-  destroy() {
-    remove(this.#pointComponent);
-    remove(this.#pointEditComponent);
+  #handleDeleteClick = () => {
+    this.#onDataChange?.(UserActions.DELETE_EVENT, UpdateType.MINOR, this.#point);
+  };
+
+  #handleNewPointSubmit = (updatedPoint) => {
+    this.#onDataChange?.(UserActions.ADD_EVENT, UpdateType.MINOR, {
+      ...updatedPoint,
+      id: nanoid(),
+    });
+  };
+
+  #handleNewPointClose = () => {
+    this.#onClose?.();
+  };
+
+  reset() {
+    if (this.#isEditMode && !this.#isNewPoint) {
+      this.#replaceFormToPoint();
+    }
   }
 
   #escKeyDownHandler = (evt) => {

@@ -28,17 +28,28 @@ export default class FilterPresenter {
   }
 
   init() {
-    this.#filterComponent = new FilterView({'filters': this.filters, onFilterChange: this.#handleFilterChange});
+    const filters = this.filters;
+    const newFilterComponent = new FilterView({
+      filters,
+      onFilterChange: this.#handleFilterChange
+    });
+
     if (this.#isFirstRender) {
-      render(this.#filterComponent, this.#container);
+      render(newFilterComponent, this.#container);
+      this.#filterComponent = newFilterComponent;
     } else {
-      const newFilterComponent = new FilterView({'filters': this.filters, onFilterChange: this.#handleFilterChange});
       replace(newFilterComponent, this.#filterComponent);
       remove(this.#filterComponent);
+      this.#filterComponent = newFilterComponent;
     }
+    const currentFilterType = this.#filterModel.filter;
+    const radio = this.#container.querySelector(`#filter-${currentFilterType}`);
+    if (radio) {
+      radio.checked = true;
+    }
+
     this.#isFirstRender = false;
   }
-
 
   #handleFilterChange = (filterType) => {
     if (this.#filterModel.filter !== filterType) {
@@ -46,5 +57,7 @@ export default class FilterPresenter {
     }
   };
 
-  #handleModelChange = () => this.init();
+  #handleModelChange = () => {
+    this.init();
+  };
 }

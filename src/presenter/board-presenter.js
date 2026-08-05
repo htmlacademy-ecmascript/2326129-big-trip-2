@@ -7,8 +7,7 @@ import { EmptyPointsMessage, UpdateType, UserActions } from '../const.js';
 import PointPresenter from './point-presenter.js';
 import { sortItems } from '../const.js';
 import { filter } from '../utils/filter.js';
-// import NewEventButton from '../view/new-event-button/new-event-button-view.js';
-// import { POINT_TYPES } from '../const.js';
+import { FilterType, getDefaultPoint } from '../const.js';
 
 export default class BoardPresenter {
   #container = null;
@@ -25,6 +24,8 @@ export default class BoardPresenter {
   #pointsPresenter = new Map();
   #filtersModel = null;
   #newEventButtonComponent = null;
+  #newPointPresenter = null;
+  #pendingNewPoint = false;
 
   constructor({ container, pointsModel, filtersModel }) {
     this.#container = container;
@@ -41,11 +42,14 @@ export default class BoardPresenter {
     this.#currentFilter = this.#filtersModel.filter;
     this.#filterPoints();
     this.#renderBoard();
+    this.#initNewEventButton();
+    if (this.#pendingNewPoint) {
+      this.#createNewPointForm();
+      this.#pendingNewPoint = false;
+    }
   }
 
   #renderBoard() {
-    // this.#clearBoard();
-    // console.log(this.#filtersModel.filter);
     if (this.#points.length === 0) {
       const message = EmptyPointsMessage[this.#currentFilter.toUpperCase()] || EmptyPointsMessage.EVERYTHING;
       this.#emptyListComponent = new EmptyPointsListView(message);
@@ -66,7 +70,7 @@ export default class BoardPresenter {
     this.#points.forEach((point) => {
       const pointPresenter = new PointPresenter({
         container: this.#pointListComponent,
-        onFavoriteClick: this.#handlePointChange,
+        onDataChange: this.#handlePointChange,
         onOpenForm: this.#handleFormOpen
       });
       pointPresenter.init({
@@ -76,11 +80,6 @@ export default class BoardPresenter {
       });
       this.#pointsPresenter.set(point.id, pointPresenter);
     });
-
-    // if(!this.#newEventButtonComponent) {
-    //   this.#newEventButtonComponent = new NewEventButton({onClick: this.#handleNewEventButtonClick});
-    //   render(this.#newEventButtonComponent, this.#mainElement);
-    // }
   }
 
   #clearBoard() {
@@ -143,13 +142,13 @@ export default class BoardPresenter {
   #handlePointChange = (actionType, updateType, newPoint) => {
     switch(actionType) {
       case UserActions.ADD_EVENT:
-        this.#pointsModel.addPoint(updateType, newPoint);
+        this.#pointsModel.addTravelPoint(updateType, newPoint);
         break;
       case UserActions.UPDATE_EVENT:
         this.#pointsModel.updateTravelPoints(updateType, newPoint);
         break;
       case UserActions.DELETE_EVENT:
-        this.#pointsModel.deletePoint(updateType, newPoint);
+        this.#pointsModel.deleteTravelPoint(updateType, newPoint);
         break;
     }
   };
@@ -160,7 +159,10 @@ export default class BoardPresenter {
         this.#pointsPresenter.get(id).updateData(this.#pointsModel.getContentById(id));
         break;
       case UpdateType.MINOR:
-        this.#clearBoard();
+        this.#destroyNewPointPresenter();
+        this.#points = [...this.#pointsModel.travelPoints];
+        this.#filterPoints();
+        this.#sortPoints();
         this.#renderBoard();
         break;
       case UpdateType.MAJOR:
@@ -172,6 +174,8 @@ export default class BoardPresenter {
   };
 
   #handleFormOpen = (openedPointId) => {
+    this.#destroyNewPointPresenter();
+
     this.#pointsPresenter.forEach((presenter, id) => {
       if (id !== openedPointId) {
         presenter.reset();
@@ -179,18 +183,52 @@ export default class BoardPresenter {
     });
   };
 
-  // #handleNewEventButtonClick() {
-  // this.#handleModelChange(null);
-  //   const pointPresenter = new PointPresenter({
-  //     container: this.#container,
-  //     onFavoriteClick: false,
-  //     onOpenForm: true,
-  //     date_from: new Date().toISOString(),
-  //     date_to: new Date().toISOString(),
-  //     destination: 0,
-  //     offers: [],
-  //     type: POINT_TYPES[0]
-  //   });
-  //   pointPresenter.init();
-  // }
+  #initNewEventButton() {
+    if (!this.#newEventButtonComponent) {
+      this.#newEventButtonComponent = this.#mainElement.querySelector('.trip-main__event-add-btn');
+      if (this.#newEventButtonComponent) {
+        this.#newEventButtonComponent.addEventListener('click', this.#handleNewEventButtonClick);
+      }
+    }
+  }
+
+  #destroyNewPointPresenter() {
+    if (this.#newPointPresenter) {
+      this.#newPointPresenter.destroy();
+      this.#newPointPresenter = null;
+    }
+  }
+
+  #createNewPointForm() {
+    if (this.#newPointPresenter) {
+      return;
+    }
+    this.#pointsPresenter.forEach((presenter) => presenter.reset());
+    this.#destroyNewPointPresenter();
+    this.#pointsPresenter.forEach((presenter) => presenter.reset());
+    this.#destroyNewPointPresenter();
+
+    const defaultPoint = getDefaultPoint();
+    this.#newPointPresenter = new PointPresenter({
+      container: { element: this.#container },
+      onDataChange: this.#handlePointChange,
+      onOpenForm: this.#handleFormOpen
+    });
+    this.#newPointPresenter.initNewPoint({
+      point: defaultPoint,
+      destinations: this.#destinations,
+      offers: this.#offers,
+      onClose: () => this.#destroyNewPointPresenter()
+    });
+  }
+
+  #handleNewEventButtonClick = () => {
+    if (this.#newPointPresenter) {
+      return;
+    }
+    this.#pendingNewPoint = true;
+    this.#filtersModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
+  };
+
+
 }

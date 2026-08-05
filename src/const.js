@@ -50,7 +50,8 @@ export const ModeTypes = {
 export const UserActions = {
   UPDATE_EVENT: 'UPDATE_EVENT',
   ADD_EVENT: 'ADD_EVENT',
-  DELETE_EVENT: 'DELETE_EVENT'
+  DELETE_EVENT: 'DELETE_EVENT',
+  CANCEL: 'CANCEL'
 };
 
 export const UpdateType = {

@@ -42,8 +42,8 @@ export default class TravelPoints extends Observable {
     this._notify(updateType, updatedPoint.id);
   }
 
-  addTravelPoint (updateType, newPoint) {
-    this.#travelPoints.push(newPoint);
+  addTravelPoint(updateType, newPoint) {
+    this.#travelPoints = [...this.#travelPoints, newPoint];
     this._notify(updateType);
   }
 
@@ -52,24 +52,13 @@ export default class TravelPoints extends Observable {
     this._notify(updateType);
   }
 
-  // getContentById(id) {
-  //   const point = this.#travelPoints.find((item) => item.id === id);
-  //   const destination = this.#destinations.find((item) => item.id === point.destinations);
-  //   const offers = this.#offers.find((item) => item.type === point.type.toLowerCase());
-  //   return {
-  //     point: point ?? {},
-  //     destination: destination ?? {},
-  //     offers: offers.offers ?? {}
-  //   };
-  // }
-
   getContentById(id) {
     const point = this.#travelPoints.find((item) => item.id === id);
-    const destination = this.#destinations.find((item) => item.id === point.destinations);
+
     return {
       point: point ?? {},
-      destination: destination ?? {},
-      offers: this.#offers
+      destinations: this.#destinations,
+      offers: this.#offers,
     };
   }
 }
