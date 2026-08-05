@@ -1,6 +1,8 @@
+
 /* eslint-disable camelcase */
 import { formatDate } from '../../utils/common.js';
 import { POINT_TYPES } from '../../const.js';
+import he from 'he';
 
 const upFirstLetter = (word) => `${word[0].toUpperCase()}${word.slice(1)}`;
 const formatOfferTitle = (title) => title.split(' ').join('_');
@@ -34,7 +36,7 @@ export function createEditPointTemplate(destinations, offers, state) {
         <input id="event-type-${pointType}-${pointId}" class="event__type-input  visually-hidden" type="radio" name="event-type" value="${pointType}" ${pointType === type ? 'checked' : ''}>
         <label class="event__type-label  event__type-label--${pointType}" for="event-type-${pointType}-${pointId}">${upFirstLetter(pointType)}</label>
       </div>`
-    )).join('')};
+    )).join('')}
 
                       </fieldset>
                     </div>
@@ -44,7 +46,7 @@ export function createEditPointTemplate(destinations, offers, state) {
                     <label class="event__label  event__type-output" for="event-destination-${pointId}">
                       ${type}
                     </label>
-                    <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value="${name || ''}" list="destination-list-${pointId}">
+                    <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value="${he.encode(name || ' ')}" list="destination-list-${pointId}">
                     <datalist id="destination-list-${pointId}">
                     ${destinations.map((destination) => `<option value="${destination.name}"></option>`).join('')}
                     </datalist>
@@ -63,7 +65,7 @@ export function createEditPointTemplate(destinations, offers, state) {
                       <span class="visually-hidden">Price</span>
                       &euro;
                     </label>
-                    <input class="event__input  event__input--price" id="event-price-${pointId}" type="text" name="event-price" value="${base_price}">
+                    <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value=${he.encode((base_price || 0).toString())}>
                   </div>
 
                   <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
@@ -85,7 +87,7 @@ export function createEditPointTemplate(destinations, offers, state) {
 
                     ${typeOffers.map((typeOffer) => (
       `<div class="event__offer-selector">
-                        <input class="event__offer-checkbox  visually-hidden" id="event-offer-${formatOfferTitle(typeOffer.title)}-${pointId}" type="checkbox" name="event-offer-${formatOfferTitle(typeOffer.title)}" ${pointOffers.some((offer) => offer.id === typeOffer.id) ? 'checked' : ''}>
+                        <input class="event__offer-checkbox  visually-hidden" id="event-offer-${formatOfferTitle(typeOffer.title)}-${pointId}" type="checkbox" name="event-offer-${formatOfferTitle(typeOffer.title)}" ${pointOffers.map((offer) => offer.id).includes(typeOffer.id) ? 'checked' : ''}>
                         <label class="event__offer-label" for="event-offer-${formatOfferTitle(typeOffer.title)}-${pointId}">
                           <span class="event__offer-title">${typeOffer.title}</span>
                           &plus;&euro;&nbsp;
