@@ -14,8 +14,8 @@ function createOfferTemplate({title, price}){
 
 export function createPointTemplate (point, offers, destinations) {
   const {type, date_from, date_to, is_favorite, base_price} = point;
-  const typeOffers = offers.find((item) => item.type === point.type).offers;
-  const pointOffers = typeOffers.filter((typeOffer) => point.offers.includes(typeOffer.id));
+  const typeOffers = offers.find((item) => item.type === point.type)?.offers ?? [];
+  const pointOffers = typeOffers.filter((typeOffer) => (point.offers ?? []).includes(typeOffer.id));
   const pointDestination = destinations.find((dest) => dest.id === point.destination);
 
   return `
@@ -25,7 +25,7 @@ export function createPointTemplate (point, offers, destinations) {
                 <div class="event__type">
                   <img class="event__type-icon" width="42" height="42" src="img/icons/${type.toLowerCase()}.png" alt="Event type icon">
                 </div>
-                <h3 class="event__title">${type} ${he.encode(pointDestination.name)}</h3>
+                <h3 class="event__title">${type} ${he.encode(pointDestination?.name ?? '')}</h3>
                 <div class="event__schedule">
                   <p class="event__time">
                     <time class="event__start-time" datetime=${formatDate(date_from, 'date-time')}>${formatDate(date_from, 'time')}</time>

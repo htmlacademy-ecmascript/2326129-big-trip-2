@@ -9,6 +9,7 @@ export function formatDate(date, formatType) {
     'full-date': 'YYYY-MM-DD',
     'custom': 'MMM DD',
     'date-time': 'YYYY-MM-DDTHH:mm',
+    'flatpickr': 'DD/MM/YY HH:mm',
     'time': 'HH:mm'
   };
   return dayjs(date).format(formats[formatType] || formats.time);

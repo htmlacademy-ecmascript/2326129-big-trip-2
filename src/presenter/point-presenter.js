@@ -1,4 +1,3 @@
-import { nanoid } from 'nanoid';
 import { render, replace, remove, RenderPosition } from '../framework/render';
 import EditPointView from '../view/edit-point-view/edit-point-view';
 import PointView from '../view/point-view/point-view';
@@ -48,6 +47,7 @@ export default class PointPresenter {
     });
 
     render(this.#pointEditComponent, this.#container.element, RenderPosition.AFTERBEGIN);
+    document.addEventListener('keydown', this.#escKeyDownHandler);
     this.#isEditMode = true;
   }
 
@@ -78,6 +78,7 @@ export default class PointPresenter {
   }
 
   destroy() {
+    document.removeEventListener('keydown', this.#escKeyDownHandler);
     if (this.#pointEditComponent) {
       remove(this.#pointEditComponent);
       this.#pointEditComponent = null;
@@ -165,22 +166,20 @@ export default class PointPresenter {
     this.#isEditMode = false;
   }
 
-  #handleEditPointSubmit = (updatedPoint) => {
-    this.#onDataChange?.(UserActions.UPDATE_EVENT, UpdateType.MINOR, updatedPoint);
+  #handleEditPointSubmit = async (updatedPoint) => {
+    await this.#onDataChange?.(UserActions.UPDATE_EVENT, UpdateType.MINOR, updatedPoint);
   };
 
-  #handleDeleteClick = () => {
-    this.#onDataChange?.(UserActions.DELETE_EVENT, UpdateType.MINOR, this.#point);
+  #handleDeleteClick = async () => {
+    await this.#onDataChange?.(UserActions.DELETE_EVENT, UpdateType.MINOR, this.#point);
   };
 
-  #handleNewPointSubmit = (updatedPoint) => {
-    this.#onDataChange?.(UserActions.ADD_EVENT, UpdateType.MINOR, {
-      ...updatedPoint,
-      id: nanoid(),
-    });
+  #handleNewPointSubmit = async (updatedPoint) => {
+    await this.#onDataChange?.(UserActions.ADD_EVENT, UpdateType.MINOR, updatedPoint);
   };
 
   #handleNewPointClose = () => {
+    document.removeEventListener('keydown', this.#escKeyDownHandler);
     this.#onClose?.();
   };
 
@@ -193,7 +192,15 @@ export default class PointPresenter {
   #escKeyDownHandler = (evt) => {
     if (evt.key === 'Escape') {
       evt.preventDefault();
-      this.#replaceFormToPoint();
+
+      if (this.#isNewPoint) {
+        this.#handleNewPointClose();
+        return;
+      }
+
+      if (this.#isEditMode) {
+        this.#replaceFormToPoint();
+      }
     }
   };
 }

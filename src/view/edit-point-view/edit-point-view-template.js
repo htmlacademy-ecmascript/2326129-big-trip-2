@@ -45,7 +45,7 @@ export function createEditPointTemplate(point, destinations, offers) {
                     <label class="event__label  event__type-output" for="event-destination-${pointId}">
                       ${type}
                     </label>
-                    <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value="${he.encode(name || ' ')}" list="destination-list-${pointId}">
+                    <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value="${name ? he.encode(name) : ''}" list="destination-list-${pointId}">
                     <datalist id="destination-list-${pointId}">
                     ${destinations.map((destination) => `<option value="${destination.name}"></option>`).join('')}
                     </datalist>
@@ -53,10 +53,10 @@ export function createEditPointTemplate(point, destinations, offers) {
 
                   <div class="event__field-group  event__field-group--time">
                     <label class="visually-hidden" for="event-start-time-${pointId}">From</label>
-                    <input class="event__input  event__input--time" id="event-start-time-${pointId}" type="text" name="event-start-time" value="${formatDate(date_from, 'date-time')}">
+                    <input class="event__input  event__input--time" id="event-start-time-${pointId}" type="text" name="event-start-time" value="${date_from ? formatDate(date_from, 'flatpickr') : ''}">
                     &mdash;
                     <label class="visually-hidden" for="event-end-time-${pointId}">To</label>
-                    <input class="event__input  event__input--time" id="event-end-time-${pointId}" type="text" name="event-end-time" value="${formatDate(date_to, 'date-time')}">
+                    <input class="event__input  event__input--time" id="event-end-time-${pointId}" type="text" name="event-end-time" value="${date_to ? formatDate(date_to, 'flatpickr') : ''}">
                   </div>
 
                   <div class="event__field-group  event__field-group--price">

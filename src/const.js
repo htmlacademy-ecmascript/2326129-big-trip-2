@@ -17,12 +17,12 @@ export const EmptyPointsMessage = {
 
 export const getDefaultPoint = () => ({
   base_price: 0,
-  date_from: new Date().toISOString(),
-  date_to: new Date().toISOString(),
-  destination: 0,
+  date_from: '',
+  date_to: '',
+  destination: '',
   is_favorite: false,
   offers: [],
-  type: POINT_TYPES[0]
+  type: 'taxi',
 });
 
 export const sortItems = [
@@ -57,5 +57,7 @@ export const UserActions = {
 export const UpdateType = {
   PATCH: 'PATCH',
   MINOR: 'MINOR',
-  MAJOR: 'MAJOR'
+  MAJOR: 'MAJOR',
+  INIT: 'INIT',
+  ERROR: 'ERROR'
 };
