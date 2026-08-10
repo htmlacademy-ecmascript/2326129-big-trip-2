@@ -3,11 +3,10 @@ import PointListView from '../view/point-list-view/point-list-view';
 import SortingView from '../view/sorting-view/sorting-view';
 import { render, remove } from '../framework/render.js';
 import EmptyPointsListView from '../view/empty-points-list-view/empty-points-list-view.js';
-import { EmptyPointsMessage, UpdateType, UserActions } from '../const.js';
+import { EmptyPointsMessage, FailedLoadMessage, UpdateType, UserAction } from '../const.js';
 import PointPresenter from './point-presenter.js';
-import { sortItems } from '../const.js';
+import { sortItems, SortType, FilterType, getDefaultPoint } from '../const.js';
 import { filter } from '../utils/filter.js';
-import { FilterType, getDefaultPoint } from '../const.js';
 import LoadingView from '../view/loading-view/loading-view.js';
 import UiBlocker from '../framework/ui-blocker/ui-blocker.js';
 
@@ -22,8 +21,8 @@ export default class BoardPresenter {
   #points = [];
   #offers = [];
   #destinations = [];
-  #currentFilter = 'everything';
-  #currentSortType = 'day';
+  #currentFilter = FilterType.EVERYTHING;
+  #currentSortType = SortType.DAY;
   #sortComponent = null;
   #mainElement = document.querySelector('.trip-main');
   #pointListComponent = null;
@@ -36,6 +35,7 @@ export default class BoardPresenter {
   #temporaryListComponent = null;
   #loadingComponent = new LoadingView();
   #isLoading = true;
+  #isLoadError = false;
   #uiBlocker = new UiBlocker({
     lowerLimit: TimeLimit.LOWER_LIMIT,
     upperLimit: TimeLimit.UPPER_LIMIT
@@ -143,17 +143,17 @@ export default class BoardPresenter {
 
   #sortPoints() {
     switch (this.#currentSortType) {
-      case 'day':
+      case SortType.DAY:
         this.#points.sort((a, b) => new Date(a.date_from) - new Date(b.date_from));
         break;
-      case 'time':
+      case SortType.TIME:
         this.#points.sort((a, b) => {
           const durA = new Date(a.date_to) - new Date(a.date_from);
           const durB = new Date(b.date_to) - new Date(b.date_from);
           return durB - durA;
         });
         break;
-      case 'price':
+      case SortType.PRICE:
         this.#points.sort((a, b) => b.base_price - a.base_price);
         break;
       default:
@@ -162,7 +162,7 @@ export default class BoardPresenter {
   }
 
   resetSort() {
-    this.#currentSortType = 'day';
+    this.#currentSortType = SortType.DAY;
     this.#points = [...this.#pointsModel.travelPoints];
     this.#sortPoints();
     this.#renderBoard();
@@ -170,20 +170,23 @@ export default class BoardPresenter {
 
   #handlePointChange = async (actionType, updateType, newPoint) => {
     this.#uiBlocker.block();
+
     try {
       switch (actionType) {
-        case UserActions.ADD_EVENT:
+        case UserAction.ADD_EVENT:
           await this.#pointsModel.addTravelPoint(updateType, newPoint);
           break;
-        case UserActions.UPDATE_EVENT:
+        case UserAction.UPDATE_EVENT:
           await this.#pointsModel.updateTravelPoints(updateType, newPoint);
           break;
-        case UserActions.DELETE_EVENT:
+        case UserAction.DELETE_EVENT:
           await this.#pointsModel.deleteTravelPoint(updateType, newPoint);
           break;
       }
+
+      return true;
     } catch {
-      // Ошибка сохранения — данные на экране не меняются
+      return false;
     } finally {
       this.#uiBlocker.unblock();
     }
@@ -205,14 +208,16 @@ export default class BoardPresenter {
           ? FilterType.EVERYTHING
           : this.#filtersModel.filter;
         this.#filterPoints();
-        this.#currentSortType = 'day';
+        if (wasNewPointForm) {
+          this.#currentSortType = SortType.DAY;
+        }
         this.#sortPoints();
         this.#renderBoard();
         break;
       }
       case UpdateType.MAJOR:
         this.#clearBoard();
-        this.#currentSortType = 'day';
+        this.#currentSortType = SortType.DAY;
         this.init();
         break;
       case UpdateType.INIT:
@@ -221,19 +226,16 @@ export default class BoardPresenter {
         break;
       case UpdateType.ERROR:
         this.#isLoading = false;
+        this.#isLoadError = true;
         this.#clearBoard();
         this.#points = [];
-        this.#emptyListComponent = new EmptyPointsListView(EmptyPointsMessage.EVERYTHING);
+        this.#emptyListComponent = new EmptyPointsListView(FailedLoadMessage);
         render(this.#emptyListComponent, this.#container);
         this.#initNewEventButton();
+        this.#setNewEventButtonDisabled(true);
         break;
     }
   };
-
-  #renderErrorMessage() {
-    this.#emptyListComponent = new EmptyPointsListView(EmptyPointsMessage.EVERYTHING);
-    render(this.#emptyListComponent, this.#container);
-  }
 
   #handleFormOpen = (openedPointId) => {
     this.#destroyNewPointPresenter();
@@ -264,6 +266,16 @@ export default class BoardPresenter {
       remove(this.#temporaryListComponent);
       this.#temporaryListComponent = null;
     }
+
+    if (!this.#isLoadError) {
+      this.#setNewEventButtonDisabled(false);
+    }
+  }
+
+  #setNewEventButtonDisabled(isDisabled) {
+    if (this.#newEventButtonComponent) {
+      this.#newEventButtonComponent.disabled = isDisabled;
+    }
   }
 
   #createNewPointForm() {
@@ -271,6 +283,7 @@ export default class BoardPresenter {
       return;
     }
 
+    this.#setNewEventButtonDisabled(true);
     this.#pointsPresenter.forEach((presenter) => presenter.reset());
     this.#destroyNewPointPresenter();
 
@@ -306,6 +319,7 @@ export default class BoardPresenter {
     if (this.#newPointPresenter) {
       return;
     }
+    this.#setNewEventButtonDisabled(true);
     this.#pendingNewPoint = true;
     this.#filtersModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
   };

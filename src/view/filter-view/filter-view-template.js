@@ -1,5 +1,5 @@
-function createFilterItemTemplate(filter, isChecked) {
-  const {type} = filter;
+function createFilterItemTemplate(filter) {
+  const {type, isChecked, isDisabled} = filter;
   return (
     `<div class="trip-filters__filter">
       <input
@@ -8,6 +8,7 @@ function createFilterItemTemplate(filter, isChecked) {
         type="radio"
         name="trip-filter"
         ${isChecked ? 'checked' : ''}
+        ${isDisabled ? 'disabled' : ''}
         value="${type}">
       <label class="trip-filters__filter-label" for="filter-${type}">${type.toUpperCase()}</label>
     </div>
@@ -15,7 +16,7 @@ function createFilterItemTemplate(filter, isChecked) {
 }
 
 export function createFilterTemplate(filterPoints) {
-  const filterPointsTemplate = filterPoints.map((filter) => createFilterItemTemplate(filter, filter.isChecked)).join('');
+  const filterPointsTemplate = filterPoints.map((filter) => createFilterItemTemplate(filter)).join('');
 
   return (
     `<form class="trip-filters" action="#" method="get">

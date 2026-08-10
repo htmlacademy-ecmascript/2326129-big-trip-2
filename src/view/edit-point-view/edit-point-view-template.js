@@ -47,7 +47,7 @@ export function createEditPointTemplate(point, destinations, offers) {
                     </label>
                     <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value="${name ? he.encode(name) : ''}" list="destination-list-${pointId}">
                     <datalist id="destination-list-${pointId}">
-                    ${destinations.map((destination) => `<option value="${destination.name}"></option>`).join('')}
+                    ${destinations.map((destination) => `<option value="${he.encode(destination.name)}"></option>`).join('')}
                     </datalist>
                   </div>
 
@@ -88,9 +88,9 @@ export function createEditPointTemplate(point, destinations, offers) {
       `<div class="event__offer-selector">
                         <input class="event__offer-checkbox  visually-hidden" id="event-offer-${formatOfferTitle(typeOffer.title)}-${pointId}" type="checkbox" name="event-offer-${formatOfferTitle(typeOffer.title)}" ${pointOffers.map((offer) => offer.id).includes(typeOffer.id) ? 'checked' : ''}>
                         <label class="event__offer-label" for="event-offer-${formatOfferTitle(typeOffer.title)}-${pointId}">
-                          <span class="event__offer-title">${typeOffer.title}</span>
+                          <span class="event__offer-title">${he.encode(typeOffer.title)}</span>
                           &plus;&euro;&nbsp;
-                          <span class="event__offer-price">${typeOffer.price}</span>
+                          <span class="event__offer-price">${he.encode(String(typeOffer.price))}</span>
                         </label>
                       </div>`
     )).join('')}
@@ -101,11 +101,11 @@ export function createEditPointTemplate(point, destinations, offers) {
                   ${pointDestination && (pointDestination.description || pictures?.length) ? (
       `<section class="event__section  event__section--destination">
                     <h3 class="event__section-title  event__section-title--destination">Destination</h3>
-                    <p class="event__destination-description">${description || ''}</p>
+                    <p class="event__destination-description">${he.encode(description || '')}</p>
                     ${pictures?.length ? (
         `<div class="event__photos-container">
                           <div class="event__photos-tape">
-                          ${pictures.map((pic) => `<img class="event__photo" src="${pic.src}" alt="${pic.description}">`).join('')}
+                          ${pictures.map((pic) => `<img class="event__photo" src="${he.encode(pic.src)}" alt="${he.encode(pic.description)}">`).join('')}
                         </div>
                       </div>`
       ) : ''}

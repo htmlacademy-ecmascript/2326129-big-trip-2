@@ -1,7 +1,7 @@
 import { render, replace, remove, RenderPosition } from '../framework/render';
 import EditPointView from '../view/edit-point-view/edit-point-view';
 import PointView from '../view/point-view/point-view';
-import { UserActions, UpdateType } from '../const';
+import { UserAction, UpdateType } from '../const';
 
 export default class PointPresenter {
   #container = null;
@@ -68,9 +68,7 @@ export default class PointPresenter {
         destinations: this.#destinations,
         offers: this.#offers,
         onRollupClick: () => this.#replacePointToForm(),
-        onClickFavoriteButton: (updatedPoint) => {
-          this.#onDataChange?.(UserActions.UPDATE_EVENT, UpdateType.PATCH, updatedPoint);
-        },
+        onClickFavoriteButton: this.#handleFavoriteClick,
       });
       replace(newPointComponent, this.#pointComponent);
       this.#pointComponent = newPointComponent;
@@ -105,9 +103,7 @@ export default class PointPresenter {
       destinations,
       offers,
       onRollupClick: () => this.#replacePointToForm(),
-      onClickFavoriteButton: (updatedPoint) => {
-        this.#onDataChange?.(UserActions.UPDATE_EVENT, UpdateType.PATCH, updatedPoint);
-      },
+      onClickFavoriteButton: this.#handleFavoriteClick,
     });
 
     const pointEditComponent = new EditPointView({
@@ -166,17 +162,11 @@ export default class PointPresenter {
     this.#isEditMode = false;
   }
 
-  #handleEditPointSubmit = async (updatedPoint) => {
-    await this.#onDataChange?.(UserActions.UPDATE_EVENT, UpdateType.MINOR, updatedPoint);
-  };
+  #handleEditPointSubmit = async (updatedPoint) => this.#onDataChange?.(UserAction.UPDATE_EVENT, UpdateType.MINOR, updatedPoint) ?? false;
 
-  #handleDeleteClick = async () => {
-    await this.#onDataChange?.(UserActions.DELETE_EVENT, UpdateType.MINOR, this.#point);
-  };
+  #handleDeleteClick = async () => this.#onDataChange?.(UserAction.DELETE_EVENT, UpdateType.MINOR, this.#point) ?? false;
 
-  #handleNewPointSubmit = async (updatedPoint) => {
-    await this.#onDataChange?.(UserActions.ADD_EVENT, UpdateType.MINOR, updatedPoint);
-  };
+  #handleNewPointSubmit = async (updatedPoint) => this.#onDataChange?.(UserAction.ADD_EVENT, UpdateType.MINOR, updatedPoint) ?? false;
 
   #handleNewPointClose = () => {
     document.removeEventListener('keydown', this.#escKeyDownHandler);
@@ -188,6 +178,18 @@ export default class PointPresenter {
       this.#replaceFormToPoint();
     }
   }
+
+  #handleFavoriteClick = async (updatedPoint) => {
+    const isSuccess = await this.#onDataChange?.(
+      UserAction.UPDATE_EVENT,
+      UpdateType.PATCH,
+      updatedPoint
+    );
+
+    if (isSuccess === false) {
+      this.#pointComponent.shake();
+    }
+  };
 
   #escKeyDownHandler = (evt) => {
     if (evt.key === 'Escape') {

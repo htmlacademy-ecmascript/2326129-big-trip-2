@@ -12,6 +12,14 @@ const DATE_TIME_FORMAT = 'd/m/y H:i';
 const DAYJS_DATE_TIME_FORMAT = 'D/M/YY H:mm';
 const formatOfferTitle = (title) => title.split(' ').join('_');
 
+const ButtonText = {
+  SAVE: 'Save',
+  SAVING: 'Saving...',
+  DELETE: 'Delete',
+  DELETING: 'Deleting...',
+  CANCEL: 'Cancel',
+};
+
 export default class EditPointView extends AbstractStatefulView {
   #handleFormSubmit = null;
   #handleFormClose = null;
@@ -45,6 +53,7 @@ export default class EditPointView extends AbstractStatefulView {
   removeElement() {
     if (this.#destinationInput && this.#validateDestinationHandler) {
       this.#destinationInput.removeEventListener('input', this.#validateDestinationHandler);
+      this.#destinationInput.removeEventListener('change', this.#destinationChangeHandler);
       this.#destinationInput = null;
       this.#validateDestinationHandler = null;
     }
@@ -70,6 +79,7 @@ export default class EditPointView extends AbstractStatefulView {
       this.#destinationInput = destinationInput;
       this.#validateDestinationHandler = this.#validateDestination.bind(this);
       this.#destinationInput.addEventListener('input', this.#validateDestinationHandler);
+      this.#destinationInput.addEventListener('change', this.#destinationChangeHandler);
     }
 
     this.#setDatepickers();
@@ -90,7 +100,6 @@ export default class EditPointView extends AbstractStatefulView {
       enableTime: true,
       dateFormat: DATE_TIME_FORMAT,
       ...(point.date_from ? { defaultDate: point.date_from } : {}),
-      minDate: 'today',
       onChange: ([selectedDate]) => {
         if (selectedDate) {
           this.#endDatepicker.set('minDate', selectedDate);
@@ -102,7 +111,7 @@ export default class EditPointView extends AbstractStatefulView {
       enableTime: true,
       dateFormat: DATE_TIME_FORMAT,
       ...(point.date_to ? { defaultDate: point.date_to } : {}),
-      minDate: point.date_from || 'today',
+      minDate: point.date_from || null,
       onChange: ([selectedDate]) => {
         if (selectedDate) {
           this.#startDatepicker.set('maxDate', selectedDate);
@@ -110,6 +119,22 @@ export default class EditPointView extends AbstractStatefulView {
       },
     });
   }
+
+  #destinationChangeHandler = () => {
+    const value = this.#destinationInput.value.trim();
+    const destination = this._state.destinations.find((dest) => dest.name === value);
+
+    if (!destination || destination.id === this._state.point.destination) {
+      return;
+    }
+
+    this.updateElement({
+      point: {
+        ...this._state.point,
+        destination: destination.id,
+      },
+    });
+  };
 
   #validateDestination = () => {
     const input = this.#destinationInput;
@@ -197,6 +222,31 @@ export default class EditPointView extends AbstractStatefulView {
     };
   }
 
+  #getSaveButton() {
+    return this.element.querySelector('.event__save-btn');
+  }
+
+  #getResetButton() {
+    return this.element.querySelector('.event__reset-btn');
+  }
+
+  #setSaveButtonLoading(isLoading) {
+    const button = this.#getSaveButton();
+    button.textContent = isLoading ? ButtonText.SAVING : ButtonText.SAVE;
+    button.disabled = isLoading;
+  }
+
+  #setDeleteButtonLoading(isLoading) {
+    const button = this.#getResetButton();
+
+    if (!this._state.point?.id) {
+      return;
+    }
+
+    button.textContent = isLoading ? ButtonText.DELETING : ButtonText.DELETE;
+    button.disabled = isLoading;
+  }
+
   #typeChangeHandler = (evt) => {
     const selectedType = evt.target.value;
     this.element.querySelector('.event__type-toggle').checked = false;
@@ -217,8 +267,16 @@ export default class EditPointView extends AbstractStatefulView {
     evt.preventDefault();
     const updatedPoint = this.#getPoint();
 
-    if (updatedPoint) {
-      await this.#handleFormSubmit?.(updatedPoint);
+    if (!updatedPoint) {
+      return;
+    }
+
+    this.#setSaveButtonLoading(true);
+    const isSuccess = await this.#handleFormSubmit?.(updatedPoint);
+
+    if (!isSuccess) {
+      this.#setSaveButtonLoading(false);
+      this.shake();
     }
   };
 
@@ -227,11 +285,21 @@ export default class EditPointView extends AbstractStatefulView {
     this.#handleFormClose?.();
   };
 
-  #resetButtonHandler = (evt) => {
+  #resetButtonHandler = async (evt) => {
     evt.preventDefault();
+
     if (this._state.point?.id) {
-      return this.#handleDeleteClick?.();
+      this.#setDeleteButtonLoading(true);
+      const isSuccess = await this.#handleDeleteClick?.();
+
+      if (!isSuccess) {
+        this.#setDeleteButtonLoading(false);
+        this.shake();
+      }
+
+      return;
     }
+
     this.#handleFormClose?.();
   };
 }

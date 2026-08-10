@@ -9,6 +9,7 @@ export default class FilterPresenter {
   #container = null;
   #filterComponent = null;
   #isFirstRender = true;
+  #isLoadError = false;
 
   constructor ({container, filterModel, pointsModel}) {
     this.#container = container;
@@ -20,15 +21,26 @@ export default class FilterPresenter {
   }
 
   get filters() {
-    return Object.values(FilterType).map((name) => ({
-      type: name,
-      count: filter[name](this.#pointsModel.travelPoints).length,
-      isChecked: name === this.#filterModel.filter
-    }));
+    return Object.values(FilterType).map((name) => {
+      const count = filter[name](this.#pointsModel.travelPoints).length;
+
+      return {
+        type: name,
+        count,
+        isChecked: name === this.#filterModel.filter,
+        isDisabled: this.#isLoadError || (name !== FilterType.EVERYTHING && count === 0),
+      };
+    });
   }
 
   init() {
     const filters = this.filters;
+    const activeFilter = filters.find((item) => item.type === this.#filterModel.filter);
+
+    if (activeFilter?.isDisabled) {
+      this.#filterModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
+      return;
+    }
     const newFilterComponent = new FilterView({
       filters,
       onFilterChange: this.#handleFilterChange
@@ -57,7 +69,8 @@ export default class FilterPresenter {
     }
   };
 
-  #handleModelChange = () => {
+  #handleModelChange = (updateType) => {
+    this.#isLoadError = updateType === UpdateType.ERROR;
     this.init();
   };
 }
