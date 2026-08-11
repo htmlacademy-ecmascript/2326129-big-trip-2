@@ -3,7 +3,7 @@ import PointListView from '../view/point-list-view/point-list-view';
 import SortingView from '../view/sorting-view/sorting-view';
 import { render, remove } from '../framework/render.js';
 import EmptyPointsListView from '../view/empty-points-list-view/empty-points-list-view.js';
-import { EmptyPointsMessage, FailedLoadMessage, UpdateType, UserAction } from '../const.js';
+import { FailedLoadMessage, UpdateType, UserAction, getEmptyPointsMessage } from '../const.js';
 import PointPresenter from './point-presenter.js';
 import { sortItems, SortType, FilterType, getDefaultPoint } from '../const.js';
 import { filter } from '../utils/filter.js';
@@ -60,6 +60,7 @@ export default class BoardPresenter {
     this.#destinations = [...this.#pointsModel.destinations];
     this.#currentFilter = this.#filtersModel.filter;
     this.#filterPoints();
+    this.#sortPoints();
     this.#renderBoard();
     this.#initNewEventButton();
     if (this.#pendingNewPoint) {
@@ -72,7 +73,7 @@ export default class BoardPresenter {
     this.#clearBoard();
 
     if (this.#points.length === 0 && !this.#pendingNewPoint && !this.#newPointPresenter) {
-      const message = EmptyPointsMessage[this.#currentFilter.toUpperCase()] || EmptyPointsMessage.EVERYTHING;
+      const message = getEmptyPointsMessage(this.#filtersModel.filter);
       this.#emptyListComponent = new EmptyPointsListView(message);
       render(this.#emptyListComponent, this.#container);
       return;
@@ -104,6 +105,11 @@ export default class BoardPresenter {
   }
 
   #clearBoard() {
+    if (this.#newPointPresenter) {
+      this.#pendingNewPoint = false;
+      this.#destroyNewPointPresenter();
+    }
+
     if (this.#sortComponent) {
       remove(this.#sortComponent);
       this.#sortComponent = null;
@@ -216,7 +222,6 @@ export default class BoardPresenter {
         break;
       }
       case UpdateType.MAJOR:
-        this.#clearBoard();
         this.#currentSortType = SortType.DAY;
         this.init();
         break;
@@ -305,8 +310,17 @@ export default class BoardPresenter {
       point: defaultPoint,
       destinations: this.#destinations,
       offers: this.#offers,
-      onClose: () => this.#destroyNewPointPresenter(),
+      onClose: () => this.#handleNewPointFormClose(),
     });
+  }
+
+  #handleNewPointFormClose() {
+    this.#destroyNewPointPresenter();
+    this.#points = [...this.#pointsModel.travelPoints];
+    this.#currentFilter = this.#filtersModel.filter;
+    this.#filterPoints();
+    this.#sortPoints();
+    this.#renderBoard();
   }
 
   #renderInitialLoading() {
