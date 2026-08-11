@@ -5,19 +5,22 @@ import he from 'he';
 
 const upFirstLetter = (word) => `${word[0].toUpperCase()}${word.slice(1)}`;
 const formatOfferTitle = (title) => title.split(' ').join('_');
+const NEW_POINT_ID = 'new';
 
 export function createEditPointTemplate(point, destinations, offers) {
   const { id, type, date_from, date_to, base_price, destination: destId, offers: selectedOfferIds } = point;
 
   const pointDestination = destinations.find((dest) => dest.id === destId);
   const typeOffers = offers.find((item) => item.type === type)?.offers || [];
-  const pointOffers = typeOffers.filter((typeOffer) => selectedOfferIds.includes(typeOffer.id));
+  const pointOffers = typeOffers.filter((typeOffer) =>
+    (selectedOfferIds ?? []).some((offerId) => String(offerId) === String(typeOffer.id))
+  );
 
   const { name, description, pictures } = pointDestination || {};
-  const pointId = id;
+  const pointId = id ?? NEW_POINT_ID;
 
   return (`<li class="trip-events__item">
-              <form class="event event--edit" action="#" method="post">
+              <form class="event event--edit" action="#" method="post" novalidate>
                 <header class="event__header">
                   <div class="event__type-wrapper">
                     <label class="event__type  event__type-btn" for="event-type-toggle-${pointId}">
@@ -68,8 +71,8 @@ export function createEditPointTemplate(point, destinations, offers) {
                   </div>
 
                   <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
-                  <button class="event__reset-btn" type="reset">${pointId ? 'Delete' : 'Cancel'}</button>
-                  ${pointId ? (
+                  <button class="event__reset-btn" type="reset">${id ? 'Delete' : 'Cancel'}</button>
+                  ${id ? (
       `<button class="event__rollup-btn" type="button">
                     <span class="visually-hidden">Open event</span>
                   </button>`

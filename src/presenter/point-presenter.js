@@ -2,6 +2,7 @@ import { render, replace, remove, RenderPosition } from '../framework/render';
 import EditPointView from '../view/edit-point-view/edit-point-view';
 import PointView from '../view/point-view/point-view';
 import { UserAction, UpdateType } from '../const';
+import { isPointEqual } from '../utils/point-adapter.js';
 
 export default class PointPresenter {
   #container = null;
@@ -162,7 +163,14 @@ export default class PointPresenter {
     this.#isEditMode = false;
   }
 
-  #handleEditPointSubmit = async (updatedPoint) => this.#onDataChange?.(UserAction.UPDATE_EVENT, UpdateType.MINOR, updatedPoint) ?? false;
+  #handleEditPointSubmit = async (updatedPoint) => {
+    if (isPointEqual(this.#point, updatedPoint)) {
+      this.#replaceFormToPoint();
+      return true;
+    }
+
+    return this.#onDataChange?.(UserAction.UPDATE_EVENT, UpdateType.MINOR, updatedPoint) ?? false;
+  };
 
   #handleDeleteClick = async () => this.#onDataChange?.(UserAction.DELETE_EVENT, UpdateType.MINOR, this.#point) ?? false;
 

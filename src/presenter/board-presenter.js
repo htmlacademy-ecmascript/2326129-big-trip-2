@@ -7,6 +7,7 @@ import { FailedLoadMessage, UpdateType, UserAction, getEmptyPointsMessage } from
 import PointPresenter from './point-presenter.js';
 import { sortItems, SortType, FilterType, getDefaultPoint } from '../const.js';
 import { filter } from '../utils/filter.js';
+import { getPointPrice } from '../utils/trip-info.js';
 import LoadingView from '../view/loading-view/loading-view.js';
 import UiBlocker from '../framework/ui-blocker/ui-blocker.js';
 
@@ -160,7 +161,7 @@ export default class BoardPresenter {
         });
         break;
       case SortType.PRICE:
-        this.#points.sort((a, b) => b.base_price - a.base_price);
+        this.#points.sort((a, b) => getPointPrice(b, this.#offers) - getPointPrice(a, this.#offers));
         break;
       default:
         break;

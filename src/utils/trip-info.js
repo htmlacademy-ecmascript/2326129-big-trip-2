@@ -53,14 +53,19 @@ export function getTripDates(points) {
   return `${from.format('D MMM')}&nbsp;&mdash;&nbsp;${to.format('D MMM')}`;
 }
 
-export function getTripCost(points, offers) {
-  return points.reduce((total, point) => {
-    const typeOffers = offers.find((item) => item.type === point.type)?.offers ?? [];
-    const offersPrice = (point.offers ?? []).reduce((sum, offerId) => {
-      const offer = typeOffers.find((item) => item.id === offerId);
-      return sum + (offer?.price ?? 0);
-    }, 0);
+export function getOffersPrice(point, offers) {
+  const typeOffers = offers.find((item) => item.type === point.type)?.offers ?? [];
 
-    return total + point.base_price + offersPrice;
+  return (point.offers ?? []).reduce((sum, offerId) => {
+    const offer = typeOffers.find((item) => String(item.id) === String(offerId));
+    return sum + Number(offer?.price ?? 0);
   }, 0);
+}
+
+export function getPointPrice(point, offers) {
+  return Number(point.base_price ?? 0) + getOffersPrice(point, offers);
+}
+
+export function getTripCost(points, offers) {
+  return points.reduce((total, point) => total + getPointPrice(point, offers), 0);
 }

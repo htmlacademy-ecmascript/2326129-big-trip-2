@@ -1,5 +1,6 @@
 /* eslint-disable camelcase */
 import { formatDate, getDuration } from '../../utils/common.js';
+import { getPointPrice } from '../../utils/trip-info.js';
 import he from 'he';
 
 function createOfferTemplate({title, price}){
@@ -13,10 +14,13 @@ function createOfferTemplate({title, price}){
 }
 
 export function createPointTemplate (point, offers, destinations) {
-  const {type, date_from, date_to, is_favorite, base_price} = point;
+  const {type, date_from, date_to, is_favorite} = point;
   const typeOffers = offers.find((item) => item.type === point.type)?.offers ?? [];
-  const pointOffers = typeOffers.filter((typeOffer) => (point.offers ?? []).includes(typeOffer.id));
+  const pointOffers = typeOffers.filter((typeOffer) =>
+    (point.offers ?? []).some((offerId) => String(offerId) === String(typeOffer.id))
+  );
   const pointDestination = destinations.find((dest) => dest.id === point.destination);
+  const pointPrice = getPointPrice(point, offers);
 
   return `
             <li class="trip-events__item">
@@ -35,7 +39,7 @@ export function createPointTemplate (point, offers, destinations) {
                   <p class="event__duration">${getDuration(date_from, date_to)}</p>
                 </div>
                 <p class="event__price">
-                  &euro;&nbsp;<span class="event__price-value">${he.encode((base_price || 0).toString())}</span>
+                  &euro;&nbsp;<span class="event__price-value">${he.encode(String(pointPrice))}</span>
                 </p>
                 <h4 class="visually-hidden">Offers:</h4>
                 <ul class="event__selected-offers">
