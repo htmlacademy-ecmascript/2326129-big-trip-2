@@ -1,0 +1,58 @@
+import ApiService from './framework/api-service.js';
+import { adaptPointToServer } from './utils/point-adapter.js';
+
+const Method = {
+  GET: 'GET',
+  POST: 'POST',
+  PUT: 'PUT',
+  DELETE: 'DELETE',
+};
+
+export default class PointsApiService extends ApiService {
+  get points() {
+    return this._load({ url: 'points' }).then(ApiService.parseResponse);
+  }
+
+  get destinations() {
+    return this._load({ url: 'destinations' }).then(ApiService.parseResponse);
+  }
+
+  get offers() {
+    return this._load({ url: 'offers' }).then(ApiService.parseResponse);
+  }
+
+  async updatePoint(point) {
+    const response = await this._load({
+      url: `points/${point.id}`,
+      method: Method.PUT,
+      body: JSON.stringify(adaptPointToServer(point)),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+    });
+
+    return ApiService.parseResponse(response);
+  }
+
+  async addPoint(point) {
+    const response = await this._load({
+      url: 'points',
+      method: Method.POST,
+      body: JSON.stringify(adaptPointToServer(point)),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+    });
+
+    const text = await response.text();
+
+    if (!text) {
+      return point;
+    }
+
+    return JSON.parse(text);
+  }
+
+  async deletePoint(point) {
+    return this._load({
+      url: `points/${point.id}`,
+      method: Method.DELETE,
+    });
+  }
+}

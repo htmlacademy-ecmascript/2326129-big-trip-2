@@ -27,12 +27,12 @@ export default class PointView extends AbstractView {
     this.#handleRollupClick?.();
   };
 
-  #favoriteClickHandler = (evt) => {
+  #favoriteClickHandler = async (evt) => {
     evt.preventDefault();
     // eslint-disable-next-line camelcase
     const updatedPoint = { ...this.#point, is_favorite: !this.#point.is_favorite };
-    if(this.#onClickFavoriteButton){
-      return this.#onClickFavoriteButton(updatedPoint);
+    if (this.#onClickFavoriteButton) {
+      await this.#onClickFavoriteButton(updatedPoint);
     }
   };
 }

@@ -2,28 +2,42 @@
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { createEditPointTemplate } from './edit-point-view-template.js';
 import AbstractStatefulView from '../../framework/view/abstract-stateful-view.js';
+import { isPointEqual } from '../../utils/point-adapter.js';
 
-const DATE_TIME_FORMAT = 'd/m/y\\ H:i';
+dayjs.extend(customParseFormat);
 
+const DATE_TIME_FORMAT = 'd/m/y H:i';
+const DAYJS_DATE_TIME_FORMAT = 'D/M/YY H:mm';
+const NEW_POINT_ID = 'new';
 const formatOfferTitle = (title) => title.split(' ').join('_');
+
+const ButtonText = {
+  SAVE: 'Save',
+  SAVING: 'Saving...',
+  DELETE: 'Delete',
+  DELETING: 'Deleting...',
+  CANCEL: 'Cancel',
+};
 
 export default class EditPointView extends AbstractStatefulView {
   #handleFormSubmit = null;
   #handleFormClose = null;
-  #datepicker = null;
-  #datepickerFrom = null;
-  #datepickerTo = null;
   #handleDeleteClick = null;
   #startDatepicker = null;
   #endDatepicker = null;
-  #saveButton = null;
   #destinationInput = null;
   #validateDestinationHandler = null;
+  #initialPoint = null;
 
   constructor({ point, destinations, offers, onFormSubmit, onRollupClick, onDeleteClick }) {
     super();
+    this.#initialPoint = {
+      ...point,
+      offers: [...(point.offers ?? [])],
+    };
     this._setState({
       point,
       destinations,
@@ -32,19 +46,21 @@ export default class EditPointView extends AbstractStatefulView {
     this.#handleFormSubmit = onFormSubmit;
     this.#handleFormClose = onRollupClick;
     this.#handleDeleteClick = onDeleteClick;
-    this.#saveButton = this.element.querySelector('.event__save-btn');
-
     this._restoreHandlers();
   }
 
   get template() {
     const { point, destinations, offers } = this._state;
+    if (!point) {
+      return '<li class="trip-events__item"></li>';
+    }
     return createEditPointTemplate(point, destinations, offers);
   }
 
   removeElement() {
     if (this.#destinationInput && this.#validateDestinationHandler) {
       this.#destinationInput.removeEventListener('input', this.#validateDestinationHandler);
+      this.#destinationInput.removeEventListener('change', this.#destinationChangeHandler);
       this.#destinationInput = null;
       this.#validateDestinationHandler = null;
     }
@@ -56,22 +72,83 @@ export default class EditPointView extends AbstractStatefulView {
   }
 
   _restoreHandlers() {
-    this.element.querySelector('form').addEventListener('submit', this.#submitFormHandler);
-    this.element.querySelector('.event__rollup-btn')?.addEventListener('click', this.#closeFormHandler);
-    this.element.querySelector('.event__reset-btn').addEventListener('click', this.#resetButtonHandler);
+    const element = this.element;
+    element.querySelector('form').addEventListener('submit', this.#submitFormHandler);
+    element.querySelector('.event__rollup-btn')?.addEventListener('click', this.#closeFormHandler);
+    element.querySelector('.event__reset-btn').addEventListener('click', this.#resetButtonHandler);
 
-    this.element.querySelectorAll('.event__type-input').forEach((input) => {
+    element.querySelectorAll('.event__type-input').forEach((input) => {
       input.addEventListener('change', this.#typeChangeHandler);
     });
 
-    const destinationInput = this.element.querySelector('[name="event-destination"]');
+    const destinationInput = element.querySelector('[name="event-destination"]');
     if (destinationInput) {
       this.#destinationInput = destinationInput;
       this.#validateDestinationHandler = this.#validateDestination.bind(this);
       this.#destinationInput.addEventListener('input', this.#validateDestinationHandler);
+      this.#destinationInput.addEventListener('change', this.#destinationChangeHandler);
     }
+
     this.#setDatepickers();
   }
+
+  #getMinEndDate(dateFrom) {
+    if (dateFrom && dayjs(dateFrom).isAfter(dayjs(), 'minute')) {
+      return dateFrom;
+    }
+
+    return 'today';
+  }
+
+  #setDatepickers() {
+    const { point } = this._state;
+    if (!point) {
+      return;
+    }
+
+    const startElement = this.element.querySelector('[name="event-start-time"]');
+    const endElement = this.element.querySelector('[name="event-end-time"]');
+    this.#startDatepicker?.destroy();
+    this.#endDatepicker?.destroy();
+
+    this.#startDatepicker = flatpickr(startElement, {
+      enableTime: true,
+      dateFormat: DATE_TIME_FORMAT,
+      ...(point.date_from ? { defaultDate: point.date_from } : {}),
+      minDate: 'today',
+      onChange: ([selectedDate]) => {
+        this.#endDatepicker.set('minDate', this.#getMinEndDate(selectedDate));
+      },
+    });
+
+    this.#endDatepicker = flatpickr(endElement, {
+      enableTime: true,
+      dateFormat: DATE_TIME_FORMAT,
+      ...(point.date_to ? { defaultDate: point.date_to } : {}),
+      minDate: this.#getMinEndDate(point.date_from),
+      onChange: ([selectedDate]) => {
+        if (selectedDate) {
+          this.#startDatepicker.set('maxDate', selectedDate);
+        }
+      },
+    });
+  }
+
+  #destinationChangeHandler = () => {
+    const value = this.#destinationInput.value.trim();
+    const destination = this._state.destinations.find((dest) => dest.name === value);
+
+    if (!destination || destination.id === this._state.point.destination) {
+      return;
+    }
+
+    this.updateElement({
+      point: {
+        ...this.#parseFormPoint(),
+        destination: destination.id,
+      },
+    });
+  };
 
   #validateDestination = () => {
     const input = this.#destinationInput;
@@ -81,204 +158,198 @@ export default class EditPointView extends AbstractStatefulView {
     input.reportValidity();
   };
 
-  #setDatepickers() {
-    const { point } = this._state;
-    const startElement = this.element.querySelector('[name="event-start-time"]');
-    const endElement = this.element.querySelector('[name="event-end-time"]');
+  #getDateFromInput(datepicker, input, message) {
+    const selectedDate = datepicker?.selectedDates[0];
 
-    this.#startDatepicker?.destroy();
-    this.#endDatepicker?.destroy();
+    if (selectedDate) {
+      input.setCustomValidity('');
+      return selectedDate.toISOString();
+    }
 
-    this.#startDatepicker = flatpickr(startElement, {
-      enableTime: true,
-      dateFormat: DATE_TIME_FORMAT,
-      defaultDate: point.date_from,
-      minDate: 'today',
-      onChange: ([selectedDate]) => {
-        if (selectedDate) {
-          this.#endDatepicker.set('minDate', selectedDate);
-        }
-      },
-    });
+    const parsedDate = dayjs(input.value.trim(), DAYJS_DATE_TIME_FORMAT, true);
 
-    this.#endDatepicker = flatpickr(endElement, {
-      enableTime: true,
-      dateFormat: DATE_TIME_FORMAT,
-      defaultDate: point.date_to,
-      minDate: point.date_from,
-      onChange: ([selectedDate]) => {
-        if (selectedDate) {
-          this.#startDatepicker.set('maxDate', selectedDate);
-        }
-      },
-    });
+    if (parsedDate.isValid()) {
+      input.setCustomValidity('');
+      return parsedDate.toISOString();
+    }
+
+    if (message) {
+      input.setCustomValidity(message);
+      input.reportValidity();
+    }
+
+    return null;
   }
 
-  #getPoint() {
+  #getSelectedOffers(form, typeOffers, pointId) {
+    return typeOffers
+      .filter((offer) => {
+        const offerElementId = `event-offer-${formatOfferTitle(offer.title)}-${pointId}`;
+        return form.querySelector(`[id="${CSS.escape(offerElementId)}"]`)?.checked;
+      })
+      .map((offer) => offer.id);
+  }
+
+  #parseFormPoint({ validate = false } = {}) {
     const { point, destinations, offers } = this._state;
+
+    if (!point) {
+      return null;
+    }
+
     const form = this.element.querySelector('.event--edit');
+
+    if (!form) {
+      return validate ? null : point;
+    }
+
     const destinationInput = form.querySelector('[name="event-destination"]');
+    const startInput = form.querySelector('[name="event-start-time"]');
+    const endInput = form.querySelector('[name="event-end-time"]');
     const destinationName = destinationInput.value.trim();
     const destination = destinations.find((dest) => dest.name === destinationName);
     const type = form.querySelector('[name="event-type"]:checked')?.value ?? point.type;
-    const typeOffers = offers.find((item) => item.type === type).offers;
-    const pointId = point.id || null;
+    const typeOffers = offers.find((item) => item.type === type)?.offers ?? [];
+    const pointId = point.id ?? NEW_POINT_ID;
 
-    if (!destination) {
+    if (validate && !destination) {
       destinationInput.setCustomValidity('Выберите город из списка');
       destinationInput.reportValidity();
       return null;
-    } else {
-      destinationInput.setCustomValidity('');
     }
 
-    const selectedOffers = typeOffers
-      .filter((offer) => {
-        const offerId = `event-offer-${formatOfferTitle(offer.title)}-${pointId}`;
-        const checkbox = form.querySelector(`[id="${CSS.escape(offerId)}"]`);
-        return checkbox?.checked;
-      })
-      .map((offer) => offer.id);
+    destinationInput.setCustomValidity('');
+
+    const dateFrom = this.#getDateFromInput(
+      this.#startDatepicker,
+      startInput,
+      validate ? 'Укажите дату и время начала' : ''
+    ) ?? (validate ? null : point.date_from);
+
+    const dateTo = this.#getDateFromInput(
+      this.#endDatepicker,
+      endInput,
+      validate ? 'Укажите дату и время окончания' : ''
+    ) ?? (validate ? null : point.date_to);
+
+    if (validate && (!dateFrom || !dateTo)) {
+      return null;
+    }
+
+    if (validate) {
+      if (dayjs(dateFrom).isBefore(dayjs(), 'minute')) {
+        startInput.setCustomValidity('Дата начала не может быть в прошлом');
+        startInput.reportValidity();
+        return null;
+      }
+
+      if (dayjs(dateTo).isBefore(dayjs(dateFrom), 'minute')) {
+        endInput.setCustomValidity('Дата окончания не может быть раньше даты начала');
+        endInput.reportValidity();
+        return null;
+      }
+    }
 
     return {
       ...point,
       type,
-      destination: destination?.id ?? point.destination,
-      date_from: dayjs(form.querySelector('[name="event-start-time"]').value).toISOString(),
-      date_to: dayjs(form.querySelector('[name="event-end-time"]').value).toISOString(),
+      destination: validate ? destination.id : (destination?.id ?? point.destination),
+      date_from: dateFrom || point.date_from,
+      date_to: dateTo || point.date_to,
       base_price: Number(form.querySelector('[name="event-price"]').value) || 0,
-      offers: selectedOffers,
+      offers: this.#getSelectedOffers(form, typeOffers, pointId),
+      is_favorite: point.is_favorite ?? false,
     };
+  }
+
+  #getPoint() {
+    return this.#parseFormPoint({ validate: true });
+  }
+
+  #getSaveButton() {
+    return this.element.querySelector('.event__save-btn');
+  }
+
+  #getResetButton() {
+    return this.element.querySelector('.event__reset-btn');
+  }
+
+  #setSaveButtonLoading(isLoading) {
+    const button = this.#getSaveButton();
+    button.textContent = isLoading ? ButtonText.SAVING : ButtonText.SAVE;
+    button.disabled = isLoading;
+  }
+
+  #setDeleteButtonLoading(isLoading) {
+    const button = this.#getResetButton();
+
+    if (!this._state.point?.id) {
+      return;
+    }
+
+    button.textContent = isLoading ? ButtonText.DELETING : ButtonText.DELETE;
+    button.disabled = isLoading;
   }
 
   #typeChangeHandler = (evt) => {
     const selectedType = evt.target.value;
-
     this.element.querySelector('.event__type-toggle').checked = false;
-
     if (selectedType === this._state.point.type) {
       return;
     }
 
     this.updateElement({
       point: {
-        ...this._state.point,
+        ...this.#parseFormPoint(),
         type: selectedType,
         offers: [],
       },
     });
   };
 
-  #submitFormHandler = (evt) => {
+  #submitFormHandler = async (evt) => {
     evt.preventDefault();
     const updatedPoint = this.#getPoint();
-    if (updatedPoint) {
-      this.#handleFormSubmit(updatedPoint);
+
+    if (!updatedPoint) {
+      this.shake();
+      return;
+    }
+
+    if (updatedPoint.id && isPointEqual(this.#initialPoint, updatedPoint)) {
+      this.#handleFormClose?.();
+      return;
+    }
+
+    this.#setSaveButtonLoading(true);
+    const isSuccess = await this.#handleFormSubmit?.(updatedPoint);
+
+    if (!isSuccess) {
+      this.#setSaveButtonLoading(false);
+      this.shake();
     }
   };
 
   #closeFormHandler = (evt) => {
     evt.preventDefault();
-    this.#handleFormClose();
+    this.#handleFormClose?.();
   };
 
-  #resetFormHandler = (evt) => {
-    evt.preventDefault();
-    this.#handleFormClose();
-  };
-
-  #destinationChangeHandler = (evt) => {
-    const inputValue = evt.target.value.trim();
-    const selectedDestination = this.destinations.find(
-      (dest) => dest.name.toLowerCase() === inputValue.toLowerCase()
-    );
-    const destinationId = selectedDestination ? selectedDestination.id : null;
-    this.updateElement({
-      point: { ...this._state.point, destination: destinationId }
-    });
-  };
-
-  #offersChangeHandler = () => {
-    const checkboxes = Array.from(
-      this.element.querySelectorAll('.event__offer-checkbox:checked')
-    );
-    this._setState({
-      point: {
-        ...this._state.point,
-        offers: checkboxes.map((cb) => cb.dataset.offerId)
-      }
-    });
-  };
-
-  #priceChangeHandler = (evt) => {
-    this._setState({
-      point: {
-        ...this._state.point,
-        basePrice: evt.target.value
-      }
-    });
-  };
-
-  #dateFromCloseHandler = ([userDate]) => {
-    this._setState({
-      point: {
-        ...this._state.point,
-        date_from: userDate.toISOString()
-      }
-    });
-    this.#datepickerTo.set('minDate', this._state.point.date_from);
-  };
-
-  #dateToCloseHandler = ([userDate]) => {
-    this._setState({
-      point: {
-        ...this._state.point,
-        date_to: userDate.toISOString()
-      }
-    });
-    this.#datepickerFrom.set('maxDate', this._state.point.date_to);
-  };
-
-  #setDatepicker() {
-    const [dateFromElement, dateToElement] = this.element.querySelectorAll('.event__input--time');
-    const commonConfig = {
-      dateFormat: 'd/m/y H:i',
-      enableTime: true,
-      'time_24hr': true,
-      locale: { firstDayOfWeek: 1 }
-    };
-
-    this.#datepickerFrom = flatpickr(
-      dateFromElement,
-      {
-        ...commonConfig,
-        defaultDate: this._state.point.date_from,
-        onClose: this.#dateFromCloseHandler,
-        maxDate: this._state.point.date_to,
-      }
-    );
-
-    this.#datepickerTo = flatpickr(
-      dateToElement,
-      {
-        ...commonConfig,
-        defaultDate: this._state.point.date_to,
-        onClose: this.#dateToCloseHandler,
-        minDate: this._state.point.date_from,
-      }
-    );
-  }
-
-  static parsePointToState = ({ point }) => ({ point });
-
-  static parseStateToPoint = (state) => state.point;
-  #deletePointHandler = (evt) => {
+  #resetButtonHandler = async (evt) => {
     evt.preventDefault();
 
-    if (this._state.point.id) {
-      return this.#handleDeleteClick?.();
+    if (this._state.point?.id) {
+      this.#setDeleteButtonLoading(true);
+      const isSuccess = await this.#handleDeleteClick?.();
+
+      if (!isSuccess) {
+        this.#setDeleteButtonLoading(false);
+        this.shake();
+      }
+
+      return;
     }
 
-    return this.#handleFormClose?.();
+    this.#handleFormClose?.();
   };
 }

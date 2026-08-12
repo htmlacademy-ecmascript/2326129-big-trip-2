@@ -9,13 +9,10 @@ export function formatDate(date, formatType) {
     'full-date': 'YYYY-MM-DD',
     'custom': 'MMM DD',
     'date-time': 'YYYY-MM-DDTHH:mm',
+    'flatpickr': 'DD/MM/YY HH:mm',
     'time': 'HH:mm'
   };
   return dayjs(date).format(formats[formatType] || formats.time);
-}
-
-export function updatePoint(points, updatedPoint) {
-  return points.map((point) => point.id === updatedPoint.id ? updatedPoint : point);
 }
 
 export function getDuration(dateFrom, dateTo) {
@@ -39,9 +36,4 @@ export function getDuration(dateFrom, dateTo) {
   parts.push(`${String(minutes).padStart(2, '0')}M`);
 
   return parts.join(' ');
-
 }
-const getRandomElement = (items) => items[Math.floor(Math.random() * items.length)];
-
-
-export {getRandomElement};

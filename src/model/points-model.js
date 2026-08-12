@@ -1,54 +1,91 @@
-import { getRandomPoint } from '../mock/points';
-import { mockOffers } from '../mock/offers';
-import { destinations } from '../mock/destinations';
 import Observable from '../framework/observable';
-import { updatePoint } from '../utils/common';
-
-const TRAVEL_POINTS_COUNT = 3;
+import { UpdateType } from '../const';
+import { adaptPointToClient } from '../utils/point-adapter.js';
 
 export default class TravelPoints extends Observable {
+  #travelPoints = [];
+  #offers = [];
+  #destinations = [];
+  #pointsApiService = null;
 
-  #travelPoints = null;
-  #offers = null;
-  #destinations = null;
-
-  constructor(){
+  constructor({ pointsApiService }) {
     super();
-    this.#travelPoints = [];
-    this.#offers = [];
-    this.#destinations = [];
+    this.#pointsApiService = pointsApiService;
   }
 
-  init(){
-    this.#travelPoints = Array.from({length: TRAVEL_POINTS_COUNT}, getRandomPoint);
-    this.#offers = mockOffers;
-    this.#destinations = destinations;
+  async init() {
+    try {
+      const [points, destinations, offers] = await Promise.all([
+        this.#pointsApiService.points,
+        this.#pointsApiService.destinations,
+        this.#pointsApiService.offers,
+      ]);
+
+      this.#travelPoints = points.map(adaptPointToClient);
+      this.#destinations = destinations;
+      this.#offers = offers;
+      this._notify(UpdateType.INIT);
+    } catch {
+      this.#travelPoints = [];
+      this.#destinations = [];
+      this.#offers = [];
+      this._notify(UpdateType.ERROR);
+    }
   }
 
   get travelPoints() {
     return this.#travelPoints;
   }
 
-  get offers(){
+  get offers() {
     return this.#offers;
   }
 
-  get destinations(){
+  get destinations() {
     return this.#destinations;
   }
 
-  updateTravelPoints (updateType, updatedPoint) {
-    this.#travelPoints = updatePoint(this.#travelPoints, updatedPoint);
+  async updateTravelPoints(updateType, update) {
+    const index = this.#travelPoints.findIndex((point) => point.id === update.id);
+
+    if (index === -1) {
+      throw new Error('Can\'t update unexisting point');
+    }
+
+    const response = await this.#pointsApiService.updatePoint(update);
+    const updatedPoint = adaptPointToClient(response);
+
+    this.#travelPoints = [
+      ...this.#travelPoints.slice(0, index),
+      updatedPoint,
+      ...this.#travelPoints.slice(index + 1),
+    ];
+
     this._notify(updateType, updatedPoint.id);
   }
 
-  addTravelPoint(updateType, newPoint) {
-    this.#travelPoints = [...this.#travelPoints, newPoint];
+  async addTravelPoint(updateType, newPoint) {
+    const response = await this.#pointsApiService.addPoint(newPoint);
+    const addedPoint = adaptPointToClient(response);
+
+    this.#travelPoints = [...this.#travelPoints, addedPoint];
     this._notify(updateType);
   }
 
-  deleteTravelPoint(updateType, point) {
-    this.#travelPoints = this.#travelPoints.filter((item) => item.id !== point.id);
+  async deleteTravelPoint(updateType, point) {
+    const index = this.#travelPoints.findIndex((item) => item.id === point.id);
+
+    if (index === -1) {
+      throw new Error('Can\'t delete unexisting point');
+    }
+
+    await this.#pointsApiService.deletePoint(point);
+
+    this.#travelPoints = [
+      ...this.#travelPoints.slice(0, index),
+      ...this.#travelPoints.slice(index + 1),
+    ];
+
     this._notify(updateType);
   }
 
@@ -62,5 +99,3 @@ export default class TravelPoints extends Observable {
     };
   }
 }
-
-

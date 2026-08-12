@@ -1,4 +1,3 @@
-
 /* eslint-disable camelcase */
 import { formatDate } from '../../utils/common.js';
 import { POINT_TYPES } from '../../const.js';
@@ -6,19 +5,22 @@ import he from 'he';
 
 const upFirstLetter = (word) => `${word[0].toUpperCase()}${word.slice(1)}`;
 const formatOfferTitle = (title) => title.split(' ').join('_');
+const NEW_POINT_ID = 'new';
 
-export function createEditPointTemplate(destinations, offers, state) {
-  const {id, type, date_from, date_to, base_price, destination: destId, offers: selectedOfferIds } = state.point;
+export function createEditPointTemplate(point, destinations, offers) {
+  const { id, type, date_from, date_to, base_price, destination: destId, offers: selectedOfferIds } = point;
 
   const pointDestination = destinations.find((dest) => dest.id === destId);
   const typeOffers = offers.find((item) => item.type === type)?.offers || [];
-  const pointOffers = typeOffers.filter((typeOffer) => selectedOfferIds.includes(typeOffer.id));
+  const pointOffers = typeOffers.filter((typeOffer) =>
+    (selectedOfferIds ?? []).some((offerId) => String(offerId) === String(typeOffer.id))
+  );
 
   const { name, description, pictures } = pointDestination || {};
-  const pointId = id;
+  const pointId = id ?? NEW_POINT_ID;
 
   return (`<li class="trip-events__item">
-              <form class="event event--edit" action="#" method="post">
+              <form class="event event--edit" action="#" method="post" novalidate>
                 <header class="event__header">
                   <div class="event__type-wrapper">
                     <label class="event__type  event__type-btn" for="event-type-toggle-${pointId}">
@@ -46,18 +48,18 @@ export function createEditPointTemplate(destinations, offers, state) {
                     <label class="event__label  event__type-output" for="event-destination-${pointId}">
                       ${type}
                     </label>
-                    <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value="${he.encode(name || ' ')}" list="destination-list-${pointId}">
+                    <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value="${name ? he.encode(name) : ''}" list="destination-list-${pointId}">
                     <datalist id="destination-list-${pointId}">
-                    ${destinations.map((destination) => `<option value="${destination.name}"></option>`).join('')}
+                    ${destinations.map((destination) => `<option value="${he.encode(destination.name)}"></option>`).join('')}
                     </datalist>
                   </div>
 
                   <div class="event__field-group  event__field-group--time">
                     <label class="visually-hidden" for="event-start-time-${pointId}">From</label>
-                    <input class="event__input  event__input--time" id="event-start-time-${pointId}" type="text" name="event-start-time" value="${formatDate(date_from, 'date-time')}">
+                    <input class="event__input  event__input--time" id="event-start-time-${pointId}" type="text" name="event-start-time" value="${date_from ? formatDate(date_from, 'flatpickr') : ''}">
                     &mdash;
                     <label class="visually-hidden" for="event-end-time-${pointId}">To</label>
-                    <input class="event__input  event__input--time" id="event-end-time-${pointId}" type="text" name="event-end-time" value="${formatDate(date_to, 'date-time')}">
+                    <input class="event__input  event__input--time" id="event-end-time-${pointId}" type="text" name="event-end-time" value="${date_to ? formatDate(date_to, 'flatpickr') : ''}">
                   </div>
 
                   <div class="event__field-group  event__field-group--price">
@@ -69,8 +71,8 @@ export function createEditPointTemplate(destinations, offers, state) {
                   </div>
 
                   <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
-                  <button class="event__reset-btn" type="reset">${pointId ? 'Delete' : 'Cancel'}</button>
-                  ${pointId ? (
+                  <button class="event__reset-btn" type="reset">${id ? 'Delete' : 'Cancel'}</button>
+                  ${id ? (
       `<button class="event__rollup-btn" type="button">
                     <span class="visually-hidden">Open event</span>
                   </button>`
@@ -89,9 +91,9 @@ export function createEditPointTemplate(destinations, offers, state) {
       `<div class="event__offer-selector">
                         <input class="event__offer-checkbox  visually-hidden" id="event-offer-${formatOfferTitle(typeOffer.title)}-${pointId}" type="checkbox" name="event-offer-${formatOfferTitle(typeOffer.title)}" ${pointOffers.map((offer) => offer.id).includes(typeOffer.id) ? 'checked' : ''}>
                         <label class="event__offer-label" for="event-offer-${formatOfferTitle(typeOffer.title)}-${pointId}">
-                          <span class="event__offer-title">${typeOffer.title}</span>
+                          <span class="event__offer-title">${he.encode(typeOffer.title)}</span>
                           &plus;&euro;&nbsp;
-                          <span class="event__offer-price">${typeOffer.price}</span>
+                          <span class="event__offer-price">${he.encode(String(typeOffer.price))}</span>
                         </label>
                       </div>`
     )).join('')}
@@ -102,11 +104,11 @@ export function createEditPointTemplate(destinations, offers, state) {
                   ${pointDestination && (pointDestination.description || pictures?.length) ? (
       `<section class="event__section  event__section--destination">
                     <h3 class="event__section-title  event__section-title--destination">Destination</h3>
-                    <p class="event__destination-description">${description || ''}</p>
+                    <p class="event__destination-description">${he.encode(description || '')}</p>
                     ${pictures?.length ? (
         `<div class="event__photos-container">
                           <div class="event__photos-tape">
-                          ${pictures.map((pic) => `<img class="event__photo" src="${pic.src}" alt="${pic.description}">`).join('')}
+                          ${pictures.map((pic) => `<img class="event__photo" src="${he.encode(pic.src)}" alt="${he.encode(pic.description)}">`).join('')}
                         </div>
                       </div>`
       ) : ''}

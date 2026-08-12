@@ -9,27 +9,38 @@ export const FilterType = {
 };
 
 export const EmptyPointsMessage = {
-  EVERYTHING: 'Click New Event to create your first point',
-  FUTURE: 'There are no future events now',
-  PRESENT: 'There are no present events now',
-  PAST: 'There are no past events now'
+  [FilterType.EVERYTHING]: 'Click New Event to create your first point',
+  [FilterType.FUTURE]: 'There are no future events now',
+  [FilterType.PRESENT]: 'There are no present events now',
+  [FilterType.PAST]: 'There are no past events now',
 };
+
+export const getEmptyPointsMessage = (filterType) =>
+  EmptyPointsMessage[filterType] ?? EmptyPointsMessage[FilterType.EVERYTHING];
+
+export const FailedLoadMessage = 'Failed to load latest route information';
 
 export const getDefaultPoint = () => ({
   base_price: 0,
-  date_from: new Date().toISOString(),
-  date_to: new Date().toISOString(),
-  destination: 0,
+  date_from: '',
+  date_to: '',
+  destination: '',
   is_favorite: false,
   offers: [],
-  type: POINT_TYPES[0]
+  type: 'flight',
 });
 
+export const SortType = {
+  DAY: 'day',
+  TIME: 'time',
+  PRICE: 'price',
+};
+
 export const sortItems = [
-  { type: 'day', isEnabled: true },
+  { type: SortType.DAY, isEnabled: true },
   { type: 'event', isEnabled: false },
-  { type: 'time', isEnabled: true },
-  { type: 'price', isEnabled: true },
+  { type: SortType.TIME, isEnabled: true },
+  { type: SortType.PRICE, isEnabled: true },
   { type: 'offer', isEnabled: false }
 ];
 
@@ -41,21 +52,16 @@ export const SORT_LABELS = {
   offer: 'Offers'
 };
 
-export const ModeTypes = {
-  DEFAULT: 'default',
-  EDIT: 'edit',
-  NEW: 'new'
-};
-
-export const UserActions = {
+export const UserAction = {
   UPDATE_EVENT: 'UPDATE_EVENT',
   ADD_EVENT: 'ADD_EVENT',
   DELETE_EVENT: 'DELETE_EVENT',
-  CANCEL: 'CANCEL'
 };
 
 export const UpdateType = {
   PATCH: 'PATCH',
   MINOR: 'MINOR',
-  MAJOR: 'MAJOR'
+  MAJOR: 'MAJOR',
+  INIT: 'INIT',
+  ERROR: 'ERROR'
 };
