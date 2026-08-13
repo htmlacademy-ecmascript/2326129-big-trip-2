@@ -28,7 +28,7 @@ export default class FilterPresenter {
         type: name,
         count,
         isChecked: name === this.#filterModel.filter,
-        isDisabled: this.#isLoadError || (name !== FilterType.EVERYTHING && count === 0),
+        isDisabled: this.#isLoadError || count === 0,
       };
     });
   }
@@ -37,7 +37,7 @@ export default class FilterPresenter {
     const filters = this.filters;
     const activeFilter = filters.find((item) => item.type === this.#filterModel.filter);
 
-    if (activeFilter?.isDisabled) {
+    if (activeFilter?.isDisabled && activeFilter.type !== FilterType.EVERYTHING) {
       this.#filterModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
       return;
     }

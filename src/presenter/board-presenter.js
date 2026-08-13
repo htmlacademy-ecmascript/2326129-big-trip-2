@@ -263,6 +263,8 @@ export default class BoardPresenter {
   }
 
   #destroyNewPointPresenter() {
+    const hadNewPointForm = Boolean(this.#newPointPresenter);
+
     if (this.#newPointPresenter) {
       this.#newPointPresenter.destroy();
       this.#newPointPresenter = null;
@@ -273,7 +275,7 @@ export default class BoardPresenter {
       this.#temporaryListComponent = null;
     }
 
-    if (!this.#isLoadError) {
+    if (hadNewPointForm && !this.#isLoadError) {
       this.#setNewEventButtonDisabled(false);
     }
   }
@@ -289,9 +291,8 @@ export default class BoardPresenter {
       return;
     }
 
-    this.#setNewEventButtonDisabled(true);
     this.#pointsPresenter.forEach((presenter) => presenter.reset());
-    this.#destroyNewPointPresenter();
+    this.#setNewEventButtonDisabled(true);
 
     const defaultPoint = getDefaultPoint();
     let listElement = this.#container.querySelector('.trip-events__list');
