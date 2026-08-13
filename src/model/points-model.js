@@ -2,7 +2,7 @@ import Observable from '../framework/observable';
 import { UpdateType } from '../const';
 import { adaptPointToClient } from '../utils/point-adapter.js';
 
-export default class TravelPoints extends Observable {
+export default class TravelPointsModel extends Observable {
   #travelPoints = [];
   #offers = [];
   #destinations = [];
