@@ -36,7 +36,6 @@ export default class FilterPresenter {
   init() {
     const filters = this.filters;
     const activeFilter = filters.find((item) => item.type === this.#filterModel.filter);
-
     if (activeFilter?.isDisabled && activeFilter.type !== FilterType.EVERYTHING) {
       this.#filterModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
       return;
