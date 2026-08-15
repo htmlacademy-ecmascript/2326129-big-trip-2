@@ -6,19 +6,16 @@ function sortPointsByDateFrom(points) {
 }
 
 function getRouteCityNames(points, destinations) {
-  const sortedPoints = sortPointsByDateFrom(points);
-  const cityNames = [];
-
-  for (const point of sortedPoints) {
+  return sortPointsByDateFrom(points).reduce((cityNames, point) => {
     const destination = destinations.find((item) => item.id === point.destination);
     const name = destination?.name;
 
     if (name && !cityNames.includes(name)) {
       cityNames.push(name);
     }
-  }
 
-  return cityNames;
+    return cityNames;
+  }, []);
 }
 
 export function getTripTitle(points, destinations) {

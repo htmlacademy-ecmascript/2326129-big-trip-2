@@ -1,17 +1,17 @@
 /* eslint-disable camelcase */
-import { formatDate } from '../../utils/common.js';
-import { POINT_TYPES } from '../../const.js';
+import { formatDate, formatOfferTitle } from '../../utils/common.js';
+import { POINT_TYPES, getSafePointType } from '../../const.js';
 import he from 'he';
 
 const upFirstLetter = (word) => `${word[0].toUpperCase()}${word.slice(1)}`;
-const formatOfferTitle = (title) => title.split(' ').join('_');
 const NEW_POINT_ID = 'new';
 
 export function createEditPointTemplate(point, destinations, offers) {
   const { id, type, date_from, date_to, base_price, destination: destId, offers: selectedOfferIds } = point;
+  const safeType = getSafePointType(type);
 
   const pointDestination = destinations.find((dest) => dest.id === destId);
-  const typeOffers = offers.find((item) => item.type === type)?.offers || [];
+  const typeOffers = offers.find((item) => item.type === safeType)?.offers || [];
   const pointOffers = typeOffers.filter((typeOffer) =>
     (selectedOfferIds ?? []).some((offerId) => String(offerId) === String(typeOffer.id))
   );
@@ -25,7 +25,7 @@ export function createEditPointTemplate(point, destinations, offers) {
                   <div class="event__type-wrapper">
                     <label class="event__type  event__type-btn" for="event-type-toggle-${pointId}">
                       <span class="visually-hidden">Choose event type</span>
-                      <img class="event__type-icon" width="17" height="17" src="img/icons/${type}.png" alt="Event type icon">
+                      <img class="event__type-icon" width="17" height="17" src="img/icons/${safeType}.png" alt="Event type icon">
                     </label>
                     <input class="event__type-toggle  visually-hidden" id="event-type-toggle-${pointId}" type="checkbox">
 
@@ -35,7 +35,7 @@ export function createEditPointTemplate(point, destinations, offers) {
 
             ${POINT_TYPES.map((pointType) => (
       `<div class="event__type-item">
-        <input id="event-type-${pointType}-${pointId}" class="event__type-input  visually-hidden" type="radio" name="event-type" value="${pointType}" ${pointType === type ? 'checked' : ''}>
+        <input id="event-type-${pointType}-${pointId}" class="event__type-input  visually-hidden" type="radio" name="event-type" value="${pointType}" ${pointType === safeType ? 'checked' : ''}>
         <label class="event__type-label  event__type-label--${pointType}" for="event-type-${pointType}-${pointId}">${upFirstLetter(pointType)}</label>
       </div>`
     )).join('')}
@@ -46,7 +46,7 @@ export function createEditPointTemplate(point, destinations, offers) {
 
                   <div class="event__field-group  event__field-group--destination">
                     <label class="event__label  event__type-output" for="event-destination-${pointId}">
-                      ${type}
+                      ${he.encode(safeType)}
                     </label>
                     <input class="event__input  event__input--destination" id="event-destination-${pointId}" type="text" name="event-destination" value="${name ? he.encode(name) : ''}" list="destination-list-${pointId}">
                     <datalist id="destination-list-${pointId}">

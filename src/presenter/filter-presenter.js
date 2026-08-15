@@ -28,19 +28,13 @@ export default class FilterPresenter {
         type: name,
         count,
         isChecked: name === this.#filterModel.filter,
-        isDisabled: this.#isLoadError || count === 0,
+        isDisabled: this.#isLoadError || (count === 0 && name !== this.#filterModel.filter),
       };
     });
   }
 
   init() {
     const filters = this.filters;
-    const activeFilter = filters.find((item) => item.type === this.#filterModel.filter);
-
-    if (activeFilter?.isDisabled && activeFilter.type !== FilterType.EVERYTHING) {
-      this.#filterModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
-      return;
-    }
     const newFilterComponent = new FilterView({
       filters,
       onFilterChange: this.#handleFilterChange

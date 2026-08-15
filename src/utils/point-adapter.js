@@ -1,9 +1,10 @@
 /* eslint-disable camelcase */
 import { formatDate } from './common.js';
+import { getSafePointType } from '../const.js';
 
 function getComparablePoint(point) {
   return {
-    type: point.type,
+    type: getSafePointType(point.type),
     destination: String(point.destination),
     base_price: Number(point.base_price),
     date_from: formatDate(point.date_from, 'flatpickr'),
@@ -33,18 +34,18 @@ export function adaptPointToClient(point) {
     destination: point.destination,
     is_favorite: Boolean(point.is_favorite),
     offers: [...(point.offers ?? [])],
-    type: point.type,
+    type: getSafePointType(point.type),
   };
 }
 
 export function adaptPointToServer(point) {
   return {
-    base_price: parseInt(point.base_price, 10),
+    base_price: point.base_price,
     date_from: point.date_from,
     date_to: point.date_to,
     destination: point.destination,
     is_favorite: Boolean(point.is_favorite),
     offers: [...(point.offers ?? [])],
-    type: point.type,
+    type: getSafePointType(point.type),
   };
 }

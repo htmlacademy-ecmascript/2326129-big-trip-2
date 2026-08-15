@@ -6,13 +6,14 @@ import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { createEditPointTemplate } from './edit-point-view-template.js';
 import AbstractStatefulView from '../../framework/view/abstract-stateful-view.js';
 import { isPointEqual } from '../../utils/point-adapter.js';
+import { getSafePointType } from '../../const.js';
+import { formatOfferTitle } from '../../utils/common.js';
 
 dayjs.extend(customParseFormat);
 
 const DATE_TIME_FORMAT = 'd/m/y H:i';
 const DAYJS_DATE_TIME_FORMAT = 'D/M/YY H:mm';
 const NEW_POINT_ID = 'new';
-const formatOfferTitle = (title) => title.split(' ').join('_');
 
 const ButtonText = {
   SAVE: 'Save',
@@ -92,12 +93,16 @@ export default class EditPointView extends AbstractStatefulView {
     this.#setDatepickers();
   }
 
+  #isNewPoint() {
+    return !this._state.point?.id;
+  }
+
   #getMinEndDate(dateFrom) {
-    if (dateFrom && dayjs(dateFrom).isAfter(dayjs(), 'minute')) {
+    if (dateFrom) {
       return dateFrom;
     }
 
-    return 'today';
+    return this.#isNewPoint() ? 'today' : null;
   }
 
   #setDatepickers() {
@@ -106,6 +111,7 @@ export default class EditPointView extends AbstractStatefulView {
       return;
     }
 
+    const isNewPoint = this.#isNewPoint();
     const startElement = this.element.querySelector('[name="event-start-time"]');
     const endElement = this.element.querySelector('[name="event-end-time"]');
     this.#startDatepicker?.destroy();
@@ -115,7 +121,7 @@ export default class EditPointView extends AbstractStatefulView {
       enableTime: true,
       dateFormat: DATE_TIME_FORMAT,
       ...(point.date_from ? { defaultDate: point.date_from } : {}),
-      minDate: 'today',
+      ...(isNewPoint ? { minDate: 'today' } : {}),
       onChange: ([selectedDate]) => {
         this.#endDatepicker.set('minDate', this.#getMinEndDate(selectedDate));
       },
@@ -190,25 +196,14 @@ export default class EditPointView extends AbstractStatefulView {
       .map((offer) => offer.id);
   }
 
-  #parseFormPoint({ validate = false } = {}) {
+  #getFormFields(form, validate) {
     const { point, destinations, offers } = this._state;
-
-    if (!point) {
-      return null;
-    }
-
-    const form = this.element.querySelector('.event--edit');
-
-    if (!form) {
-      return validate ? null : point;
-    }
-
     const destinationInput = form.querySelector('[name="event-destination"]');
     const startInput = form.querySelector('[name="event-start-time"]');
     const endInput = form.querySelector('[name="event-end-time"]');
     const destinationName = destinationInput.value.trim();
     const destination = destinations.find((dest) => dest.name === destinationName);
-    const type = form.querySelector('[name="event-type"]:checked')?.value ?? point.type;
+    const type = getSafePointType(form.querySelector('[name="event-type"]:checked')?.value ?? point.type);
     const typeOffers = offers.find((item) => item.type === type)?.offers ?? [];
     const pointId = point.id ?? NEW_POINT_ID;
 
@@ -232,23 +227,48 @@ export default class EditPointView extends AbstractStatefulView {
       validate ? 'Укажите дату и время окончания' : ''
     ) ?? (validate ? null : point.date_to);
 
-    if (validate && (!dateFrom || !dateTo)) {
-      return null;
+    return {
+      destination,
+      type,
+      typeOffers,
+      pointId,
+      dateFrom,
+      dateTo,
+      startInput,
+      endInput,
+      basePrice: Number(form.querySelector('[name="event-price"]').value) || 0,
+    };
+  }
+
+  #validateFormDates({ validate, dateFrom, dateTo, startInput, endInput }) {
+    if (!validate) {
+      return true;
     }
 
-    if (validate) {
-      if (dayjs(dateFrom).isBefore(dayjs(), 'minute')) {
-        startInput.setCustomValidity('Дата начала не может быть в прошлом');
-        startInput.reportValidity();
-        return null;
-      }
-
-      if (dayjs(dateTo).isBefore(dayjs(dateFrom), 'minute')) {
-        endInput.setCustomValidity('Дата окончания не может быть раньше даты начала');
-        endInput.reportValidity();
-        return null;
-      }
+    if (!dateFrom || !dateTo) {
+      return false;
     }
+
+    startInput.setCustomValidity('');
+
+    if (this.#isNewPoint() && dayjs(dateFrom).isBefore(dayjs(), 'minute')) {
+      startInput.setCustomValidity('Дата начала не может быть в прошлом');
+      startInput.reportValidity();
+      return false;
+    }
+
+    if (dayjs(dateTo).isBefore(dayjs(dateFrom), 'minute')) {
+      endInput.setCustomValidity('Дата окончания не может быть раньше даты начала');
+      endInput.reportValidity();
+      return false;
+    }
+
+    endInput.setCustomValidity('');
+    return true;
+  }
+
+  #buildPointFromForm(point, form, fields, validate) {
+    const { destination, type, typeOffers, pointId, dateFrom, dateTo, basePrice } = fields;
 
     return {
       ...point,
@@ -256,10 +276,32 @@ export default class EditPointView extends AbstractStatefulView {
       destination: validate ? destination.id : (destination?.id ?? point.destination),
       date_from: dateFrom || point.date_from,
       date_to: dateTo || point.date_to,
-      base_price: Number(form.querySelector('[name="event-price"]').value) || 0,
+      base_price: basePrice,
       offers: this.#getSelectedOffers(form, typeOffers, pointId),
       is_favorite: point.is_favorite ?? false,
     };
+  }
+
+  #parseFormPoint({ validate = false } = {}) {
+    const { point } = this._state;
+
+    if (!point) {
+      return null;
+    }
+
+    const form = this.element.querySelector('.event--edit');
+
+    if (!form) {
+      return validate ? null : point;
+    }
+
+    const fields = this.#getFormFields(form, validate);
+
+    if (!fields || !this.#validateFormDates({ validate, ...fields })) {
+      return null;
+    }
+
+    return this.#buildPointFromForm(point, form, fields, validate);
   }
 
   #getPoint() {
@@ -292,7 +334,7 @@ export default class EditPointView extends AbstractStatefulView {
   }
 
   #typeChangeHandler = (evt) => {
-    const selectedType = evt.target.value;
+    const selectedType = getSafePointType(evt.target.value);
     this.element.querySelector('.event__type-toggle').checked = false;
     if (selectedType === this._state.point.type) {
       return;

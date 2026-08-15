@@ -1,6 +1,12 @@
 /* eslint-disable camelcase */
 export const POINT_TYPES = ['taxi', 'bus', 'train', 'ship', 'drive', 'flight', 'check-in', 'sightseeing', 'restaurant'];
 
+export const DEFAULT_POINT_TYPE = 'flight';
+
+export function getSafePointType(type) {
+  return POINT_TYPES.includes(type) ? type : DEFAULT_POINT_TYPE;
+}
+
 export const FilterType = {
   EVERYTHING: 'everything',
   FUTURE: 'future',
@@ -18,7 +24,7 @@ export const EmptyPointsMessage = {
 export const getEmptyPointsMessage = (filterType) =>
   EmptyPointsMessage[filterType] ?? EmptyPointsMessage[FilterType.EVERYTHING];
 
-export const FailedLoadMessage = 'Failed to load latest route information';
+export const FAILED_LOAD_MESSAGE = 'Failed to load latest route information';
 
 export const getDefaultPoint = () => ({
   base_price: 0,
@@ -27,7 +33,7 @@ export const getDefaultPoint = () => ({
   destination: '',
   is_favorite: false,
   offers: [],
-  type: 'flight',
+  type: DEFAULT_POINT_TYPE,
 });
 
 export const SortType = {
@@ -36,7 +42,7 @@ export const SortType = {
   PRICE: 'price',
 };
 
-export const sortItems = [
+export const SORT_ITEMS = [
   { type: SortType.DAY, isEnabled: true },
   { type: 'event', isEnabled: false },
   { type: SortType.TIME, isEnabled: true },
