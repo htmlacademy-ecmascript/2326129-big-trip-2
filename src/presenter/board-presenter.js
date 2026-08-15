@@ -337,5 +337,4 @@ export default class BoardPresenter {
     this.#pendingNewPoint = true;
     this.#filtersModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
   };
-
 }
