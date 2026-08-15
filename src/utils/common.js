@@ -37,3 +37,7 @@ export function getDuration(dateFrom, dateTo) {
 
   return parts.join(' ');
 }
+
+export function formatOfferTitle(title) {
+  return title.split(' ').join('_');
+}

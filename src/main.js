@@ -30,6 +30,7 @@ const tripInfoPresenter = new TripInfoPresenter({
 
 const boardPresenter = new BoardPresenter({
   container: siteTripEvents,
+  newEventButtonContainer: siteTripMain,
   pointsModel: travelPointsModel,
   filtersModel,
 });

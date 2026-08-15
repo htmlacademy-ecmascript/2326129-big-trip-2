@@ -90,6 +90,12 @@ export default class PointPresenter {
     this.#isNewPoint = false;
   }
 
+  reset() {
+    if (this.#isEditMode && !this.#isNewPoint) {
+      this.#replaceFormToPoint();
+    }
+  }
+
   #renderView() {
     if (!this.#point) {
       return;
@@ -180,12 +186,6 @@ export default class PointPresenter {
     document.removeEventListener('keydown', this.#escKeyDownHandler);
     this.#onClose?.();
   };
-
-  reset() {
-    if (this.#isEditMode && !this.#isNewPoint) {
-      this.#replaceFormToPoint();
-    }
-  }
 
   #handleFavoriteClick = async (updatedPoint) => {
     const isSuccess = await this.#onDataChange?.(
